@@ -1,0 +1,18 @@
+*.swp
+package-lock.json
+__pycache__
+.pytest_cache
+.venv
+*.egg-info
+
+# CDK asset staging directory
+.cdk.staging
+cdk.out
+
+# Additional ignores
+lambda/**/__pycache__/
+*.pyc
+.env
+*.pem
+node_modules/
+frontend/build/
