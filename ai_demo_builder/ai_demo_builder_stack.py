@@ -53,7 +53,7 @@ class AiDemoBuilderStack(Stack):
             auto_delete_objects=True
         )
 
-        # DynamoDB Table for demo sessions
+        # DynamoDB Table for demo sessions (temporary state storage)
         self.sessions_table = dynamodb.Table(
             self, "AiDemoSessions",
             table_name="ai-demo-sessions",
@@ -226,35 +226,73 @@ class AiDemoBuilderStack(Stack):
         # PERSON 3: UPLOAD PIPELINE (Your working services)
         # ========================
         
-        # Service 8: Upload URL Generator
-        upload_url_generator = lambda_.Function(
-            self, "UploadUrlGenerator",
-            function_name="service-8-upload-url-generator",
-            runtime=lambda_.Runtime.PYTHON_3_11,
-            handler="index.lambda_handler",
-            code=lambda_.Code.from_asset("lambda/upload/service-8-upload-url-generator"),
-            role=lambda_role,
-            timeout=Duration.seconds(10),
-            memory_size=256,
-            environment={
-                "S3_BUCKET": self.demo_bucket.bucket_name,
-                "DYNAMODB_TABLE": self.sessions_table.table_name
-            }
-        )
-
-        # Service 9: Upload Tracker
+        # Service 8: Upload Tracker
         upload_tracker = lambda_.Function(
             self, "UploadTracker",
-            function_name="service-9-upload-tracker",
+            function_name="service-8-upload-tracker",
             runtime=lambda_.Runtime.PYTHON_3_11,
             handler="index.lambda_handler",
-            code=lambda_.Code.from_asset("lambda/upload/service-9-upload-tracker"),
+            code=lambda_.Code.from_asset("lambda/upload/service-8-upload-tracker"),
             role=lambda_role,
             timeout=Duration.seconds(30),
             memory_size=256,
             environment={
-                "DYNAMODB_TABLE": self.sessions_table.table_name
+                "DYNAMODB_TABLE": self.sessions_table.table_name,
+                "S3_BUCKET": self.demo_bucket.bucket_name,
+                "VALIDATOR_FUNCTION_NAME": "service-9-video-validator"
             }
+        )
+
+        # S3 Event Notification to trigger upload tracker
+        self.demo_bucket.add_event_notification(
+            s3.EventType.OBJECT_CREATED,
+            s3n.LambdaDestination(upload_tracker),
+            s3.NotificationKeyFilter(
+                prefix="videos/",
+                suffix=".mp4"
+            )
+        )
+
+        # Grant permission to invoke Service 9
+        upload_tracker.add_to_role_policy(
+            iam.PolicyStatement(
+                actions=["lambda:InvokeFunction"],
+                resources=[
+                    f"arn:aws:lambda:{self.region}:{self.account}:function:service-9-video-validator"
+                ]
+            )
+        )
+
+        # Service 9: Video Validator
+        video_validator = lambda_.Function(
+            self, "VideoValidator",
+            function_name="service-9-video-validator",
+            runtime=lambda_.Runtime.PYTHON_3_11,
+            handler="index.lambda_handler",
+            code=lambda_.Code.from_asset("lambda/upload/service-9-video-validator"),
+            role=lambda_role,
+            layers=[ffmpeg_layer],  # IMPORTANT: Attach FFmpeg layer
+            timeout=Duration.seconds(300),  # 5 minutes for large files
+            memory_size=1024,  # Need memory for video processing
+            ephemeral_storage_size=Size.mebibytes(512),  # /tmp storage
+            environment={
+                "S3_BUCKET": self.demo_bucket.bucket_name,
+                "DYNAMODB_TABLE": self.sessions_table.table_name,
+                "CONVERTER_FUNCTION_NAME": "service-10-format-converter",
+                "MAX_VIDEO_DURATION": "120",  # 2 minutes
+                "MIN_VIDEO_DURATION": "5",    # 5 seconds
+                "MAX_FILE_SIZE": "104857600"  # 100MB
+            }
+        )
+
+        # Grant permission to invoke Service 10
+        video_validator.add_to_role_policy(
+            iam.PolicyStatement(
+                actions=["lambda:InvokeFunction"],
+                resources=[
+                    f"arn:aws:lambda:{self.region}:{self.account}:function:service-10-format-converter"
+                ]
+            )
         )
 
         # Service 10: Video Validator
@@ -274,22 +312,31 @@ class AiDemoBuilderStack(Stack):
             }
         )
 
-        # Service 11: Format Converter
-        format_converter = lambda_.Function(
-            self, "FormatConverter",
-            function_name="service-11-format-converter",
+        # Service 11: Job Queue Service
+        job_queue_service = lambda_.Function(
+            self, "JobQueueService",
+            function_name="service-11-job-queue",
             runtime=lambda_.Runtime.PYTHON_3_11,
             handler="index.lambda_handler",
-            code=lambda_.Code.from_asset("lambda/upload/service-11-format-converter"),
+            code=lambda_.Code.from_asset("lambda/processing/service-11-job-queue"),
             role=lambda_role,
-            layers=[ffmpeg_layer],
-            timeout=Duration.seconds(900),
-            memory_size=3008,
-            ephemeral_storage_size=Size.mebibytes(2048),
+            timeout=Duration.seconds(30),
+            memory_size=256,
             environment={
-                "S3_BUCKET": self.demo_bucket.bucket_name,
-                "DYNAMODB_TABLE": self.sessions_table.table_name
+                "DYNAMODB_TABLE": self.sessions_table.table_name,
+                "SQS_QUEUE_URL": processing_queue.queue_url
             }
+        )
+
+        # Grant SQS send permissions
+        processing_queue.grant_send_messages(job_queue_service)
+
+        # Add API endpoint
+        generate = api.root.add_resource("generate")
+        generate_by_id = generate.add_resource("{session_id}")
+        generate_by_id.add_method(
+            "POST",
+            apigateway.LambdaIntegration(job_queue_service)
         )
 
         # S3 Event Notification to trigger upload tracker

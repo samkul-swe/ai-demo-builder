@@ -11,7 +11,7 @@ from botocore.exceptions import ClientError
 
 # Initialize DynamoDB
 dynamodb = boto3.resource('dynamodb')
-SESSIONS_TABLE_NAME = os.environ.get('SESSIONS_TABLE_NAME', 'ai-demo-sessions')
+TABLE_NAME = os.environ.get('DYNAMODB_TABLE', 'ai-demo-sessions')  # ✅ Fixed
 
 
 def lambda_handler(event, context):
@@ -23,7 +23,7 @@ def lambda_handler(event, context):
     """
     try:
         print("[Service6] Starting Session Creator")
-        print(f"[Service6] Table: {SESSIONS_TABLE_NAME}")
+        print(f"[Service6] Table: {TABLE_NAME}")
         print(f"[Service6] Event keys: {list(event.keys())}")
 
         # Extract data from Service 5
@@ -65,14 +65,13 @@ def lambda_handler(event, context):
         
         print(f"[Service6] Storing {len(videos)} video suggestions")
         
-        # Create session item matching your table schema
+        # ✅ FIXED: Correct DynamoDB schema (single partition key 'id')
         session_item = {
-            # Composite key (matches your table schema)
-            'project_name': project_name,  # Partition key
-            'session_id': session_id,      # Sort key
-            
-            # Also store as 'id' for backward compatibility
+            # ✅ PRIMARY KEY (matches all other services)
             'id': session_id,
+            
+            # Project info
+            'project_name': project_name,
             'owner': owner,
             'github_url': github_url,
             'commit_sha': commit_sha,
@@ -103,8 +102,8 @@ def lambda_handler(event, context):
         }
         
         # Store in DynamoDB
-        print(f"[Service6] Writing to DynamoDB table: {SESSIONS_TABLE_NAME}")
-        table = dynamodb.Table(SESSIONS_TABLE_NAME)
+        print(f"[Service6] Writing to DynamoDB table: {TABLE_NAME}")
+        table = dynamodb.Table(TABLE_NAME)
         
         response = table.put_item(Item=session_item)
         
@@ -118,7 +117,7 @@ def lambda_handler(event, context):
                 'project_name': project_name,
                 'owner': owner,
                 'status': 'stored',
-                'table': SESSIONS_TABLE_NAME,
+                'table': TABLE_NAME,
                 'created_at': created_at,
                 'suggestions_count': len(videos)
             }
@@ -131,7 +130,7 @@ def lambda_handler(event, context):
         
         # Common DynamoDB errors
         if error_code == 'ResourceNotFoundException':
-            print(f"[Service6] Table '{SESSIONS_TABLE_NAME}' does not exist!")
+            print(f"[Service6] Table '{TABLE_NAME}' does not exist!")
         elif error_code == 'ValidationException':
             print(f"[Service6] Invalid data format for DynamoDB")
         elif error_code == 'ProvisionedThroughputExceededException':
