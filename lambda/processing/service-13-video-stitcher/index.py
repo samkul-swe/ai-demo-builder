@@ -23,7 +23,7 @@ dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
 lambda_client = boto3.client('lambda', region_name='us-east-1')
 
 # Configuration - FIXED to match other services
-BUCKET = os.environ.get('S3_BUCKET', 'ai-demo-builder')
+BUCKET_NAME = os.environ.get('BUCKET_NAME')
 TABLE_NAME = os.environ.get('SESSIONS_TABLE', 'ai-demo-sessions')
 OPTIMIZER_FUNCTION = os.environ.get('OPTIMIZER_FUNCTION_NAME', 'service-14-video-optimizer')
 
@@ -257,21 +257,21 @@ def get_video_info(video_path):
 
 def download_from_s3(s3_key, local_path):
     """Download file from S3"""
-    logger.info(f"[Service13] Downloading s3://{BUCKET}/{s3_key}")
-    s3_client.download_file(BUCKET, s3_key, local_path)
+    logger.info(f"[Service13] Downloading s3://{BUCKET_NAME}/{s3_key}")
+    s3_client.download_file(BUCKET_NAME, s3_key, local_path)
     return local_path
 
 
 def upload_to_s3(local_path, s3_key):
     """Upload file to S3"""
-    logger.info(f"[Service13] Uploading to s3://{BUCKET}/{s3_key}")
+    logger.info(f"[Service13] Uploading to s3://{BUCKET_NAME}/{s3_key}")
     s3_client.upload_file(
         local_path, 
-        BUCKET, 
+        BUCKET_NAME, 
         s3_key,
         ExtraArgs={'ContentType': 'video/mp4'}
     )
-    return f"https://{BUCKET}.s3.us-east-1.amazonaws.com/{s3_key}"
+    return f"https://{BUCKET_NAME}.s3.us-east-1.amazonaws.com/{s3_key}"
 
 
 def create_video_from_slide(slide_path, output_path, duration=SLIDE_DURATION):

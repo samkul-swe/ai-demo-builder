@@ -22,7 +22,7 @@ s3_client = boto3.client('s3', config=s3_config)
 dynamodb = boto3.resource('dynamodb')
 
 # Get configuration from environment
-BUCKET = os.environ.get('S3_BUCKET', 'ai-demo-builder')
+BUCKET_NAME = os.environ.get('BUCKET_NAME')
 SESSIONS_TABLE = os.environ.get('SESSIONS_TABLE', 'ai-demo-sessions')
 
 
@@ -185,15 +185,15 @@ def lambda_handler(event, context):
             }
         
         # Create S3 key
-        s3_key = f'videos/{session_id}/{suggestion_id}.mp4'
+        s3_key = f'uploads/{session_id}/{suggestion_id}.mp4'
         
-        print(f'[Service7] Generating presigned URL for: {BUCKET}/{s3_key}')
+        print(f'[Service7] Generating presigned URL for: {BUCKET_NAME}/{s3_key}')
         
         # Generate presigned URL
         upload_url = s3_client.generate_presigned_url(
             'put_object',
             Params={
-                'Bucket': BUCKET,
+                'Bucket': BUCKET_NAME,
                 'Key': s3_key,
                 'ContentType': 'video/mp4'
             },
@@ -221,7 +221,7 @@ def lambda_handler(event, context):
                 'session_id': session_id,
                 'suggestion_id': suggestion_id,
                 'project_name': project_name,
-                'bucket': BUCKET,
+                'bucket': BUCKET_NAME,
                 'expires_in': 3600,
                 'instructions': {
                     'method': 'PUT',

@@ -25,7 +25,7 @@ dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
 lambda_client = boto3.client('lambda', region_name='us-east-1')
 
 # Environment variables
-BUCKET_NAME = os.environ.get('S3_BUCKET', 'ai-demo-builder')
+BUCKET_NAME = os.environ.get('BUCKET_NAME')
 TABLE_NAME = os.environ.get('SESSIONS_TABLE')
 STITCHER_FUNCTION = os.environ.get('STITCHER_FUNCTION_NAME', 'service-13-video-stitcher')
 

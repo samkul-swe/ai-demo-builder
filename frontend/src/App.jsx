@@ -1,57 +1,86 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Step1GitHubInput from './components/Step1GitHubInput';
 import Step2SuggestionsWithUpload from './components/Step2SuggestionsWithUpload';
 import Step3FinalVideo from './components/Step3FinalVideo';
 import { Github, Sparkles, Video } from 'lucide-react';
+import api from './services/api';
 
 function App() {
   const [step, setStep] = useState(1);
   const [sessionId, setSessionId] = useState(null);
   const [githubUrl, setGithubUrl] = useState('');
   const [suggestions, setSuggestions] = useState([]);
-  const [uploadedVideos, setUploadedVideos] = useState({});
-  const [finalVideoUrl, setFinalVideoUrl] = useState(null);
-  const [processingStatus, setProcessingStatus] = useState('idle');
+  const [loading, setLoading] = useState(false);
+
+  // Check if there's a session in URL or localStorage on mount
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlSessionId = urlParams.get('session_id');
+    const storedSessionId = localStorage.getItem('currentSessionId');
+    
+    const sessionToResume = urlSessionId || storedSessionId;
+    
+    if (sessionToResume) {
+      resumeSession(sessionToResume);
+    }
+  }, []);
+
+  const resumeSession = async (sessionIdToResume) => {
+    setLoading(true);
+    try {
+      console.log('Attempting to resume session:', sessionIdToResume);
+      const status = await api.getSessionStatus(sessionIdToResume);
+      
+      if (status) {
+        setSessionId(sessionIdToResume);
+        setGithubUrl(status.github_url || '');
+        
+        // Convert DynamoDB suggestions format to frontend format
+        const suggestionsArray = status.suggestions_count 
+          ? Array.from({ length: status.suggestions_count }, (_, i) => ({ sequence_number: i + 1 }))
+          : [];
+        setSuggestions(suggestionsArray);
+        
+        // Determine which step based on status
+        const sessionStatus = status.status;
+        
+        if (['ready', 'uploading'].includes(sessionStatus)) {
+          // User is in upload phase
+          setStep(2);
+        } else if (['ready_for_processing', 'queued', 'processing', 'complete'].includes(sessionStatus) || sessionStatus?.includes('failed')) {
+          // User is in processing/complete phase
+          setStep(3);
+        } else {
+          // Unknown status, go to step 2 to be safe
+          setStep(2);
+        }
+        
+        console.log('Session resumed:', { sessionStatus, step });
+      }
+    } catch (error) {
+      console.error('Failed to resume session:', error);
+      // If resume fails, clear stored session and start fresh
+      localStorage.removeItem('currentSessionId');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleGitHubSubmit = (url, suggestionsData) => {
+    console.log('GitHub submit:', { url, suggestionsData });
     setGithubUrl(url);
-    setSessionId(suggestionsData["session_id"]);
-    setSuggestions(suggestionsData["videos"]);
+    setSessionId(suggestionsData.sessionId);
+    setSuggestions(suggestionsData.suggestions);
+    
+    // Store session ID for resume functionality
+    localStorage.setItem('currentSessionId', suggestionsData.sessionId);
+    
     setStep(2);
   };
 
-  const handleAllVideosUploaded = (videos) => {
-    setUploadedVideos(videos);
+  const handleAllVideosUploaded = () => {
+    console.log('All videos uploaded, moving to step 3');
     setStep(3);
-    setProcessingStatus('processing');
-    pollForFinalVideo();
-  };
-
-  const pollForFinalVideo = () => {
-    const interval = setInterval(async () => {
-      try {
-        const response = await fetch(
-          `${import.meta.env.VITE_API_URL}/demo/${sessionId}`
-        );
-        
-        if (response.ok) {
-          const data = await response.json();
-          if (data.status === 'complete' && data.demo_url) {
-            setFinalVideoUrl(data.demo_url);
-            setProcessingStatus('complete');
-            clearInterval(interval);
-          } else if (data.status === 'failed') {
-            setProcessingStatus('failed');
-            clearInterval(interval);
-          }
-        }
-      } catch (error) {
-        console.error('Error polling for final video:', error);
-      }
-    }, 3000);
-
-    // Stop polling after 5 minutes
-    setTimeout(() => clearInterval(interval), 300000);
   };
 
   const handleStartOver = () => {
@@ -59,9 +88,12 @@ function App() {
     setSessionId(null);
     setGithubUrl('');
     setSuggestions([]);
-    setUploadedVideos({});
-    setFinalVideoUrl(null);
-    setProcessingStatus('idle');
+    
+    // Clear stored session
+    localStorage.removeItem('currentSessionId');
+    
+    // Clear URL parameters
+    window.history.replaceState({}, document.title, window.location.pathname);
   };
 
   const steps = [
@@ -69,6 +101,18 @@ function App() {
     { num: 2, label: 'Record Videos', icon: Sparkles },
     { num: 3, label: 'Final Demo', icon: Video }
   ];
+
+  // Show loading while resuming session
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
+          <p className="text-gray-600">Resuming session...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
@@ -138,7 +182,7 @@ function App() {
             </div>
           )}
           
-          {step === 2 && (
+          {step === 2 && sessionId && (
             <Step2SuggestionsWithUpload
               sessionId={sessionId}
               suggestions={suggestions}
@@ -147,11 +191,10 @@ function App() {
             />
           )}
           
-          {step === 3 && (
+          {step === 3 && sessionId && (
             <div className="p-8">
               <Step3FinalVideo
-                finalVideoUrl={finalVideoUrl}
-                processingStatus={processingStatus}
+                sessionId={sessionId}
                 onStartOver={handleStartOver}
               />
             </div>
@@ -160,7 +203,7 @@ function App() {
 
         {/* Footer */}
         <footer className="mt-12 text-center text-gray-500 text-sm">
-          <p>AI Demo Builder • Cloud Computing Final Project • Fall 2025</p>
+          <p>AI Demo Builder • Cloud Computing Final Project • Fall 2024</p>
         </footer>
       </div>
     </div>

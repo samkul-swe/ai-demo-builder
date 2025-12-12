@@ -31,9 +31,6 @@ AWS_REGION = os.getenv('AWS_REGION', 'us-east-1')
 
 PROJECT_NAME = "ai-demo-builder"
 
-# S3 Bucket
-S3_BUCKET_NAME = "ai-demo-builder"
-
 # DynamoDB Tables
 SESSIONS_TABLE = "ai-demo-builder-sessions"
 CACHE_TABLE = "ai-demo-builder-cache"
@@ -212,7 +209,6 @@ def validate_config():
     print("")
     print("📋 Configuration Summary:")
     print(f"   AWS Region: {AWS_REGION}")
-    print(f"   S3 Bucket: {S3_BUCKET_NAME}")
     print(f"   Sessions Table: {SESSIONS_TABLE}")
     print(f"   Cache Table: {CACHE_TABLE}")
     print(f"   SQS Queue: {SQS_PROCESSING_QUEUE}")

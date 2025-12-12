@@ -21,7 +21,7 @@ lambda_client = boto3.client('lambda', region_name='us-east-1')
 
 # Environment variables
 TABLE_NAME = os.environ.get('SESSIONS_TABLE')
-BUCKET = os.environ.get('S3_BUCKET', 'ai-demo-builder')
+BUCKET_NAME = os.environ.get('BUCKET_NAME')
 VALIDATOR_FUNCTION = os.environ.get('VALIDATOR_FUNCTION_NAME', 'service-9-video-validator')
 
 
@@ -82,7 +82,7 @@ def handle_s3_event(event):
         
         # Parse key format: videos/session-id/suggestion-id.mp4
         key_parts = key.split('/')
-        if len(key_parts) >= 3 and key_parts[0] == 'videos':
+        if len(key_parts) >= 3 and key_parts[0] == 'uploads':
             session_id = key_parts[1]
             file_name = key_parts[2]
             
@@ -210,7 +210,7 @@ def handle_api_request(event):
             if 's3_key' in video_info:
                 # Verify file exists in S3
                 try:
-                    s3_response = s3_client.head_object(Bucket=BUCKET, Key=video_info['s3_key'])
+                    s3_response = s3_client.head_object(Bucket=BUCKET_NAME, Key=video_info['s3_key'])
                     video_info['exists'] = True
                     video_info['s3_size'] = s3_response.get('ContentLength', 0)
                 except Exception as e:

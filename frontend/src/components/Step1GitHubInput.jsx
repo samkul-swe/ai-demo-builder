@@ -9,13 +9,27 @@ function Step1GitHubInput({ onSubmit, initialUrl }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [loadingMessage, setLoadingMessage] = useState('');
+  const [hasStoredSession, setHasStoredSession] = useState(false);
+
+  // Check if there's a stored session on mount
+  React.useEffect(() => {
+    const storedSessionId = localStorage.getItem('currentSessionId');
+    setHasStoredSession(!!storedSessionId);
+  }, []);
+
+  const handleResumeSession = () => {
+    const storedSessionId = localStorage.getItem('currentSessionId');
+    if (storedSessionId) {
+      // Trigger page reload with session parameter
+      window.location.href = `${window.location.pathname}?session_id=${storedSessionId}`;
+    }
+  };
 
   const validateGitHubUrl = (url) => {
     const githubRegex = /^https?:\/\/(www\.)?github\.com\/[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+\/?$/;
     return githubRegex.test(url);
   };
 
-  // When the user clicks on the 'Analyze Repo' button
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -34,20 +48,35 @@ function Step1GitHubInput({ onSubmit, initialUrl }) {
     try {
       // Step 1: Analyze repository
       setLoadingMessage('Analyzing repository...');
+      console.log('Calling analyzeGitHub with:', githubUrl);
+      
       const analysisResponse = await api.analyzeGitHub(githubUrl);
+      console.log('Analysis response:', analysisResponse);
+      
+      // Validate the response structure
+      if (!analysisResponse || !analysisResponse.github_data) {
+        throw new Error('Invalid response from analysis service');
+      }
       
       // Step 2: Get AI suggestions
       setLoadingMessage('Generating AI suggestions...');
-      const suggestionsResponse = await api.getSuggestions(analysisResponse['analysis']);
+      console.log('Calling getSuggestions with:', analysisResponse);
+      
+      const suggestionsResponse = await api.getSuggestions(analysisResponse);
+      console.log('Suggestions response:', suggestionsResponse);
+      
+      // Validate suggestions response
+      if (!suggestionsResponse || !suggestionsResponse.sessionId) {
+        throw new Error('Invalid response from suggestions service');
+      }
 
       setLoadingMessage('Complete!');
       
-      onSubmit(
-        githubUrl,
-        suggestionsResponse
-      );
+      // Pass to parent component
+      onSubmit(githubUrl, suggestionsResponse);
+      
     } catch (err) {
-      console.error('Error:', err);
+      console.error('Error in handleSubmit:', err);
       setError(err.message || 'Failed to analyze repository. Please try again.');
     } finally {
       setLoading(false);
@@ -57,6 +86,29 @@ function Step1GitHubInput({ onSubmit, initialUrl }) {
 
   return (
     <div className="max-w-2xl mx-auto">
+      {/* Resume Session Banner */}
+      {hasStoredSession && (
+        <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <AlertCircle className="w-5 h-5 text-blue-600 mr-2" />
+              <div>
+                <p className="font-semibold text-blue-900">Previous session found</p>
+                <p className="text-sm text-blue-700">
+                  You have an unfinished session. Would you like to continue where you left off?
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={handleResumeSession}
+              className="ml-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors whitespace-nowrap"
+            >
+              Resume Session
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Full-screen loading overlay */}
       {loading && createPortal(
         <div 

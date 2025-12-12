@@ -24,7 +24,7 @@ s3_client = boto3.client('s3', region_name='us-east-1')
 
 # Configuration
 TABLE_NAME = os.environ.get('SESSIONS_TABLE')
-BUCKET = os.environ.get('S3_BUCKET', 'ai-demo-builder')
+BUCKET_NAME = os.environ.get('BUCKET_NAME')
 DAYS_TO_KEEP = int(os.environ.get('DAYS_TO_KEEP', '30'))
 FAILED_SESSION_DAYS = int(os.environ.get('FAILED_SESSION_DAYS', '7'))
 
@@ -43,7 +43,7 @@ def list_s3_objects(prefix):
         objects = []
         paginator = s3_client.get_paginator('list_objects_v2')
         
-        for page in paginator.paginate(Bucket=BUCKET, Prefix=prefix):
+        for page in paginator.paginate(Bucket=BUCKET_NAME, Prefix=prefix):
             if 'Contents' in page:
                 objects.extend([obj['Key'] for obj in page['Contents']])
         
@@ -76,7 +76,7 @@ def delete_s3_objects(keys):
             objects = [{'Key': key} for key in batch]
             
             response = s3_client.delete_objects(
-                Bucket=BUCKET,
+                Bucket=BUCKET_NAME,
                 Delete={'Objects': objects}
             )
             

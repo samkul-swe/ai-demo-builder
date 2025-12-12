@@ -23,7 +23,7 @@ dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
 lambda_client = boto3.client('lambda', region_name='us-east-1')  # ✅ FIXED: Added this line
 
 # Configuration - FIXED to match other services
-BUCKET = os.environ.get('S3_BUCKET', 'ai-demo-builder')
+BUCKET_NAME = os.environ.get('BUCKET_NAME')
 TABLE_NAME = os.environ.get('SESSIONS_TABLE', 'ai-demo-sessions')
 
 # FFmpeg paths - FIXED

@@ -30,7 +30,6 @@ from pathlib import Path
 # Import centralized configuration
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 from config import (
-    S3_BUCKET_NAME,
     SESSIONS_TABLE,
     CACHE_TABLE,
     SQS_PROCESSING_QUEUE,

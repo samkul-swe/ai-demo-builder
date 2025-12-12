@@ -12,6 +12,7 @@ import subprocess
 import tempfile
 from botocore.exceptions import ClientError
 import logging
+from datetime import datetime
 
 # Set up logging
 logger = logging.getLogger()
@@ -23,7 +24,7 @@ dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
 lambda_client = boto3.client('lambda', region_name='us-east-1')
 
 # Environment variables
-BUCKET = os.environ.get('S3_BUCKET', 'ai-demo-builder')
+BUCKET_NAME = os.environ.get('BUCKET_NAME')
 TABLE_NAME = os.environ.get('SESSIONS_TABLE')
 CONVERTER_FUNCTION = os.environ.get('CONVERTER_FUNCTION_NAME', 'service-10-format-converter')
 MAX_DURATION = int(os.environ.get('MAX_VIDEO_DURATION', '120'))  # 2 minutes default
@@ -107,8 +108,8 @@ def lambda_handler(event, context):
         
         try:
             # Download video from S3
-            logger.info(f"[Service9] Downloading from S3: {BUCKET}/{s3_key}")
-            s3_client.download_file(BUCKET, s3_key, temp_path)
+            logger.info(f"[Service9] Downloading from S3: {BUCKET_NAME}/{s3_key}")
+            s3_client.download_file(BUCKET_NAME, s3_key, temp_path)
             logger.info(f"[Service9] Downloaded to {temp_path}")
             
             # Get file size

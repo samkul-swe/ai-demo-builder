@@ -24,7 +24,7 @@ dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
 sqs = boto3.client('sqs', region_name='us-east-1')
 
 # Environment variables
-BUCKET = os.environ.get('S3_BUCKET', 'ai-demo-builder')
+BUCKET_NAME = os.environ.get('BUCKET_NAME')
 TABLE_NAME = os.environ.get('SESSIONS_TABLE')
 QUEUE_URL = os.environ.get('SQS_QUEUE_URL', '')
 
@@ -99,8 +99,8 @@ def lambda_handler(event, context):
         
         try:
             # Download input video
-            logger.info(f"[Service10] Downloading from S3: {BUCKET}/{input_s3_key}")
-            s3_client.download_file(BUCKET, input_s3_key, input_file)
+            logger.info(f"[Service10] Downloading from S3: {BUCKET_NAME}/{input_s3_key}")
+            s3_client.download_file(BUCKET_NAME, input_s3_key, input_file)
             input_size = os.path.getsize(input_file)
             logger.info(f"[Service10] Downloaded {input_size:,} bytes")
             
@@ -171,7 +171,7 @@ def lambda_handler(event, context):
             logger.info(f"[Service10] Uploading to S3: {output_s3_key}")
             s3_client.upload_file(
                 output_file,
-                BUCKET,
+                BUCKET_NAME,
                 output_s3_key,
                 ExtraArgs={
                     'ContentType': 'video/mp4',

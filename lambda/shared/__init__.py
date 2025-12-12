@@ -4,7 +4,7 @@ Shared utilities for Lambda functions
 
 from .config import (
     AWS_REGION,
-    S3_BUCKET,
+    BUCKET_NAME,
     SESSIONS_TABLE,
     CACHE_TABLE,
     GITHUB_TOKEN,
@@ -15,7 +15,7 @@ from .config import (
 
 __all__ = [
     'AWS_REGION',
-    'S3_BUCKET',
+    'BUCKET_NAME',
     'SESSIONS_TABLE',
     'CACHE_TABLE',
     'GITHUB_TOKEN',
