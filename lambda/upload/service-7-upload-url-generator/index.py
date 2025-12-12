@@ -14,7 +14,7 @@ from datetime import datetime
 
 # Configure S3 client
 s3_config = Config(
-    region_name='us-west-1',
+    region_name='us-west-2',
     s3={'addressing_style': 'virtual'}
 )
 

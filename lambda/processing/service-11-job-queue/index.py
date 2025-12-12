@@ -16,8 +16,8 @@ logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 # Initialize AWS clients
-sqs = boto3.client('sqs', region_name='us-west-1')
-dynamodb = boto3.resource('dynamodb', region_name='us-west-1')
+sqs = boto3.client('sqs', region_name='us-west-2')
+dynamodb = boto3.resource('dynamodb', region_name='us-west-2')
 
 # Environment variables
 QUEUE_URL = os.environ.get('SQS_QUEUE_URL', '')

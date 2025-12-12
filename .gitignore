@@ -1,18 +1,240 @@
-*.swp
-package-lock.json
-__pycache__
-.pytest_cache
-.venv
-*.egg-info
+# ========================
+# Python / CDK
+# ========================
 
-# CDK asset staging directory
-.cdk.staging
-cdk.out
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
 
-# Additional ignores
-lambda/**/__pycache__/
-*.pyc
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+.virtualenv
+
+# CDK specific
+cdk.out/
+.cdk.staging/
+cdk.context.json
+
+# ========================
+# AWS / Secrets
+# ========================
+
+# Environment variables with secrets
 .env
+.env.local
+.env.*.local
 *.pem
-node_modules/
+*.key
+
+# AWS credentials (NEVER commit these!)
+.aws/
+credentials
+config
+
+# ========================
+# Lambda Dependencies
+# ========================
+
+# Lambda function dependencies (installed via pip install -t)
+lambda/**/site-packages/
+lambda/**/.venv/
+lambda/**/venv/
+
+# Exclude installed packages but keep source code
+lambda/**/boto3/
+lambda/**/botocore/
+lambda/**/certifi/
+lambda/**/charset_normalizer/
+lambda/**/google/
+lambda/**/idna/
+lambda/**/requests/
+lambda/**/urllib3/
+lambda/**/dateutil/
+lambda/**/jmespath/
+lambda/**/s3transfer/
+lambda/**/six.py
+lambda/**/python_dateutil-*.dist-info/
+lambda/**/*.dist-info/
+lambda/**/*.egg-info/
+
+# Keep only requirements.txt and index.py
+!lambda/**/requirements.txt
+!lambda/**/index.py
+
+# ========================
+# FFmpeg Layer
+# ========================
+
+# FFmpeg binaries (too large for git)
+layers/ffmpeg/python/bin/ffmpeg
+layers/ffmpeg/python/bin/ffprobe
+layers/ffmpeg/**/*.tar.xz
+layers/ffmpeg/**/*.tar.gz
+layers/ffmpeg/**/*.zip
+
+# Keep the directory structure but ignore binaries
+!layers/ffmpeg/python/bin/.gitkeep
+
+# ========================
+# Frontend (React/Vite)
+# ========================
+
+# Dependencies
+frontend/node_modules/
+frontend/.pnp
+frontend/.pnp.js
+
+# Testing
+frontend/coverage/
+
+# Production build
+frontend/dist/
 frontend/build/
+
+# Misc
+frontend/.DS_Store
+frontend/.env
+frontend/.env.local
+frontend/.env.development.local
+frontend/.env.test.local
+frontend/.env.production.local
+
+# Logs
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+frontend/pnpm-debug.log*
+frontend/lerna-debug.log*
+
+# Editor directories and files
+frontend/.vscode/*
+!frontend/.vscode/extensions.json
+frontend/.idea
+frontend/*.suo
+frontend/*.ntvs*
+frontend/*.njsproj
+frontend/*.sln
+frontend/*.sw?
+
+# ========================
+# IDEs / Editors
+# ========================
+
+# Visual Studio Code
+.vscode/
+*.code-workspace
+
+# PyCharm
+.idea/
+*.iml
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Vim
+*.swp
+*.swo
+*~
+
+# Emacs
+*~
+\#*\#
+.\#*
+
+# ========================
+# Operating System
+# ========================
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+[Dd]esktop.ini
+
+# Linux
+*~
+
+# ========================
+# Testing / Coverage
+# ========================
+
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.hypothesis/
+
+# ========================
+# Documentation
+# ========================
+
+docs/_build/
+*.log
+
+# ========================
+# Temporary Files
+# ========================
+
+*.tmp
+*.temp
+*.bak
+*.swp
+*.swo
+*.log
+
+# ========================
+# Project Specific
+# ========================
+
+# Local testing videos/files
+test_videos/
+sample_demos/
+*.mp4
+*.mov
+*.avi
+
+# Local configuration
+config.local.json
+secrets.json
+
+# Deployment artifacts
+*.zip
+
+# Database dumps
+*.db
+*.sqlite
+*.sqlite3

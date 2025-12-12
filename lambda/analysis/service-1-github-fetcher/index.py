@@ -175,7 +175,7 @@ def fetch_readme(owner: str, repo: str, token: str = None) -> str:
     return response.text
 
 
-def invoke_lambda_service(function_name: str, payload: Dict[str, Any], region: str = 'us-west-1') -> Dict[str, Any]:
+def invoke_lambda_service(function_name: str, payload: Dict[str, Any], region: str = 'us-west-2') -> Dict[str, Any]:
     """Invoke another Lambda function"""
     if boto3 is None:
         raise ImportError("boto3 is required for Lambda-to-Lambda invocation")

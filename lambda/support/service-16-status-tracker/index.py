@@ -14,7 +14,7 @@ logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 # Initialize AWS clients
-dynamodb = boto3.resource('dynamodb', region_name='us-west-1')
+dynamodb = boto3.resource('dynamodb', region_name='us-west-2')
 
 # Configuration
 TABLE_NAME = os.environ.get('DYNAMODB_TABLE', 'ai-demo-sessions')

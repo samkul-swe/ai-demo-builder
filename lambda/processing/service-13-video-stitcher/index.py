@@ -18,9 +18,9 @@ logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 # Initialize AWS clients
-s3_client = boto3.client('s3', region_name='us-west-1')
-dynamodb = boto3.resource('dynamodb', region_name='us-west-1')
-lambda_client = boto3.client('lambda', region_name='us-west-1')
+s3_client = boto3.client('s3', region_name='us-west-2')
+dynamodb = boto3.resource('dynamodb', region_name='us-west-2')
+lambda_client = boto3.client('lambda', region_name='us-west-2')
 
 # Configuration - FIXED to match other services
 BUCKET = os.environ.get('S3_BUCKET', 'ai-demo-builder')
@@ -253,7 +253,7 @@ def upload_to_s3(local_path, s3_key):
         s3_key,
         ExtraArgs={'ContentType': 'video/mp4'}
     )
-    return f"https://{BUCKET}.s3.us-west-1.amazonaws.com/{s3_key}"
+    return f"https://{BUCKET}.s3.us-west-2.amazonaws.com/{s3_key}"
 
 
 def create_video_from_slide(slide_path, output_path, duration=SLIDE_DURATION):
