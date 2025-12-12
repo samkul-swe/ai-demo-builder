@@ -33,7 +33,7 @@ apiClient.interceptors.response.use(
 );
 
 const api = {
-  // Step 1: Analyze GitHub repository and create session
+  // Step 1: Analyze GitHub repository and create session..
   async analyzeGitHub(githubUrl) {
     try {
       // console.log('Calling Lambda at:', `${API_BASE_URL}/analyze`);
