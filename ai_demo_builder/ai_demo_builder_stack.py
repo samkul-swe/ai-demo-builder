@@ -59,8 +59,6 @@ class AiDemoBuilderStack(Stack):
         # S3 Bucket - Create first, no dependencies
         self.demo_bucket = s3.Bucket(
             self, "AiDemoBuilderBucket",
-            # Remove explicit name to avoid conflicts - CDK will generate unique name
-            bucket_name="ai-demo-builder",
             cors=[s3.CorsRule(
                 allowed_methods=[
                     s3.HttpMethods.GET,
@@ -88,7 +86,7 @@ class AiDemoBuilderStack(Stack):
         # DynamoDB Tables - No dependencies
         self.sessions_table = dynamodb.Table(
             self, "AiDemoSessions",
-            table_name="ai-demo-builder-sessions",  # ← ADD THIS LINE
+            table_name="ai-demo-builder-sessions",
             partition_key=dynamodb.Attribute(
                 name="id",
                 type=dynamodb.AttributeType.STRING
@@ -101,7 +99,7 @@ class AiDemoBuilderStack(Stack):
 
         self.cache_table = dynamodb.Table(
             self, "AiDemoCache",
-            table_name="ai-demo-builder-cache",  # ← ADD THIS LINE
+            table_name="ai-demo-builder-cache",
             partition_key=dynamodb.Attribute(
                 name="cacheKey",
                 type=dynamodb.AttributeType.STRING
