@@ -20,6 +20,7 @@ logger.setLevel(logging.INFO)
 # Initialize AWS clients
 s3_client = boto3.client('s3', region_name='us-west-1')
 dynamodb = boto3.resource('dynamodb', region_name='us-west-1')
+lambda_client = boto3.client('lambda', region_name='us-west-1')  # ✅ FIXED: Added this line
 
 # Configuration - FIXED to match other services
 BUCKET = os.environ.get('S3_BUCKET', 'ai-demo-builder')
@@ -84,9 +85,8 @@ def update_session_status(session_id, status, additional_data=None):
             expr_values[f':{key}'] = value
     
     try:
-        # ✅ FIXED: Use correct key format
         table.update_item(
-            Key={'id': session_id},  # ✅ Changed from {PARTITION_KEY: session_id}
+            Key={'id': session_id},
             UpdateExpression=update_expr,
             ExpressionAttributeNames=expr_names,
             ExpressionAttributeValues=expr_values
@@ -239,6 +239,30 @@ def generate_thumbnail(input_path, output_path, timestamp='00:00:01'):
     return output_path
 
 
+def trigger_notification_service(session_id):
+    """Trigger Service 15 (Notification Service) asynchronously"""
+    try:
+        payload = {'session_id': session_id}
+        
+        notification_function = os.environ.get(
+            'NOTIFICATION_FUNCTION_NAME', 
+            'service-15-notification-service'
+        )
+        
+        logger.info(f"[Service14] Triggering notification service: {notification_function}")
+        
+        lambda_client.invoke(
+            FunctionName=notification_function,
+            InvocationType='Event',  # Asynchronous
+            Payload=json.dumps(payload)
+        )
+        
+        logger.info(f"[Service14] ✅ Triggered Service 15 (Notification)")
+        
+    except Exception as e:
+        logger.error(f"[Service14] ⚠️ Failed to trigger notifications (non-critical): {e}")
+
+
 def process_optimization(session_id, stitched_key):
     """Main optimization logic"""
     logger.info(f"[Service14] Starting optimization for session: {session_id}")
@@ -356,7 +380,8 @@ def process_optimization(session_id, stitched_key):
         })
         
         logger.info(f"[Service14] 🎉 Optimization complete for session {session_id}")
-
+        
+        # Trigger notification service
         trigger_notification_service(session_id)
         
         return result
@@ -394,7 +419,7 @@ def lambda_handler(event, context):
         else:
             body = event
         
-        # ✅ FIXED: Accept both 'stitched_key' (from Service 13) and 'input_key'
+        # Accept both 'stitched_key' (from Service 13) and 'input_key'
         session_id = body.get('session_id') or body.get('project_name')
         stitched_key = body.get('stitched_key') or body.get('input_key')
         
@@ -450,26 +475,3 @@ def lambda_handler(event, context):
                 'error': str(e)
             })
         }
-    
-def trigger_notification_service(session_id):
-    """Trigger Service 15 (Notification Service) asynchronously"""
-    try:
-        payload = {'session_id': session_id}
-        
-        notification_function = os.environ.get(
-            'NOTIFICATION_FUNCTION_NAME', 
-            'service-15-notification-service'
-        )
-        
-        logger.info(f"[Service14] Triggering notification service: {notification_function}")
-        
-        lambda_client.invoke(
-            FunctionName=notification_function,
-            InvocationType='Event',  # Asynchronous
-            Payload=json.dumps(payload)
-        )
-        
-        logger.info(f"[Service14] ✅ Triggered Service 15 (Notification)")
-        
-    except Exception as e:
-        logger.error(f"[Service14] ⚠️ Failed to trigger notifications (non-critical): {e}")
