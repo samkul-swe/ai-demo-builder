@@ -8,7 +8,7 @@ import json
 import boto3
 import uuid
 from botocore.exceptions import ClientError
-from google import genai
+import google.generativeai as genai
 
 try:
     from dotenv import load_dotenv

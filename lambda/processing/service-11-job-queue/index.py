@@ -21,7 +21,7 @@ dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
 
 # Environment variables
 QUEUE_URL = os.environ.get('SQS_QUEUE_URL', '')
-TABLE_NAME = os.environ.get('DYNAMODB_TABLE', 'ai-demo-sessions')
+TABLE_NAME = os.environ.get('SESSIONS_TABLE')
 
 
 def validate_session_ready(session_id):

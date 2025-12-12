@@ -24,7 +24,7 @@ lambda_client = boto3.client('lambda', region_name='us-east-1')
 
 # Configuration - FIXED to match other services
 BUCKET = os.environ.get('S3_BUCKET', 'ai-demo-builder')
-TABLE_NAME = os.environ.get('DYNAMODB_TABLE', 'ai-demo-sessions')
+TABLE_NAME = os.environ.get('SESSIONS_TABLE', 'ai-demo-sessions')
 OPTIMIZER_FUNCTION = os.environ.get('OPTIMIZER_FUNCTION_NAME', 'service-14-video-optimizer')
 
 # FFmpeg paths

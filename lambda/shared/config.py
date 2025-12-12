@@ -11,8 +11,8 @@ from typing import Dict, Any, Optional
 # ========================
 AWS_REGION = os.environ.get('REGION', 'us-east-1')
 S3_BUCKET = os.environ.get('S3_BUCKET', 'ai-demo-builder')
-DYNAMODB_TABLE = os.environ.get('DYNAMODB_TABLE', 'ai-demo-sessions')
-CACHE_TABLE = os.environ.get('CACHE_TABLE', 'ai-demo-cache')
+SESSIONS_TABLE = os.environ.get('SESSIONS_TABLE', os.environ.get('SESSIONS_TABLE', ''))
+CACHE_TABLE = os.environ.get('CACHE_TABLE', os.environ.get('CACHE_TABLE'))
 SQS_QUEUE_URL = os.environ.get('SQS_QUEUE_URL', '')
 SNS_TOPIC_ARN = os.environ.get('SNS_TOPIC_ARN', '')
 
@@ -94,7 +94,7 @@ def get_all_config() -> Dict[str, Any]:
     return {
         'aws_region': AWS_REGION,
         's3_bucket': S3_BUCKET,
-        'dynamodb_table': DYNAMODB_TABLE,
+        'sessions_table': SESSIONS_TABLE,
         'cache_table': CACHE_TABLE,
         'has_github_token': bool(GITHUB_TOKEN),
         'has_gemini_key': bool(GEMINI_API_KEY),

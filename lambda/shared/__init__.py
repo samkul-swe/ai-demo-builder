@@ -5,7 +5,7 @@ Shared utilities for Lambda functions
 from .config import (
     AWS_REGION,
     S3_BUCKET,
-    DYNAMODB_TABLE,
+    SESSIONS_TABLE,
     CACHE_TABLE,
     GITHUB_TOKEN,
     GEMINI_API_KEY,
@@ -16,7 +16,7 @@ from .config import (
 __all__ = [
     'AWS_REGION',
     'S3_BUCKET',
-    'DYNAMODB_TABLE',
+    'SESSIONS_TABLE',
     'CACHE_TABLE',
     'GITHUB_TOKEN',
     'GEMINI_API_KEY',

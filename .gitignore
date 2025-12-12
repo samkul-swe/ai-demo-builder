@@ -1,14 +1,8 @@
-# ========================
-# Python / CDK
-# ========================
-
-# Byte-compiled / optimized / DLL files
-__pycache__/
+# Python
 *.py[cod]
 *$py.class
+__pycache__/
 *.so
-
-# Distribution / packaging
 .Python
 build/
 develop-eggs/
@@ -22,219 +16,61 @@ parts/
 sdist/
 var/
 wheels/
-share/python-wheels/
 *.egg-info/
 .installed.cfg
 *.egg
 MANIFEST
+*.pyc
 
-# Virtual environments
+# Virtual Environments
 .venv/
 venv/
 ENV/
 env/
-.virtualenv
+.virtualenv/
 
-# CDK specific
+# CDK
 cdk.out/
-.cdk.staging/
 cdk.context.json
+node_modules/
 
-# ========================
-# AWS / Secrets
-# ========================
+# Lambda Dependencies (ignore all installed packages, keep only source code)
+lambda/*/service-*/*
+!lambda/*/service-*/index.py
+!lambda/*/service-*/requirements.txt
 
-# Environment variables with secrets
-.env
-.env.local
-.env.*.local
-*.pem
-*.key
+# Lambda Layers
+layers/ffmpeg/
 
-# AWS credentials (NEVER commit these!)
-.aws/
-credentials
-config
-
-# ========================
-# Lambda Dependencies
-# ========================
-
-# Lambda function dependencies (installed via pip install -t)
-lambda/**/site-packages/
-lambda/**/.venv/
-lambda/**/venv/
-
-# Exclude installed packages but keep source code
-lambda/**/boto3/
-lambda/**/botocore/
-lambda/**/certifi/
-lambda/**/charset_normalizer/
-lambda/**/google/
-lambda/**/idna/
-lambda/**/requests/
-lambda/**/urllib3/
-lambda/**/dateutil/
-lambda/**/jmespath/
-lambda/**/s3transfer/
-lambda/**/six.py
-lambda/**/python_dateutil-*.dist-info/
-lambda/**/*.dist-info/
-lambda/**/*.egg-info/
-
-# Keep only requirements.txt and index.py
-!lambda/**/requirements.txt
-!lambda/**/index.py
-
-# ========================
-# FFmpeg Layer
-# ========================
-
-# FFmpeg binaries (too large for git)
-layers/ffmpeg/python/bin/ffmpeg
-layers/ffmpeg/python/bin/ffprobe
-layers/ffmpeg/**/*.tar.xz
-layers/ffmpeg/**/*.tar.gz
-layers/ffmpeg/**/*.zip
-
-# Keep the directory structure but ignore binaries
-!layers/ffmpeg/python/bin/.gitkeep
-
-# ========================
-# Frontend (React/Vite)
-# ========================
-
-# Dependencies
-frontend/node_modules/
-frontend/.pnp
-frontend/.pnp.js
-
-# Testing
-frontend/coverage/
-
-# Production build
-frontend/dist/
-frontend/build/
-
-# Misc
-frontend/.DS_Store
-frontend/.env
-frontend/.env.local
-frontend/.env.development.local
-frontend/.env.test.local
-frontend/.env.production.local
-
-# Logs
-frontend/npm-debug.log*
-frontend/yarn-debug.log*
-frontend/yarn-error.log*
-frontend/pnpm-debug.log*
-frontend/lerna-debug.log*
-
-# Editor directories and files
-frontend/.vscode/*
-!frontend/.vscode/extensions.json
-frontend/.idea
-frontend/*.suo
-frontend/*.ntvs*
-frontend/*.njsproj
-frontend/*.sln
-frontend/*.sw?
-
-# ========================
-# IDEs / Editors
-# ========================
-
-# Visual Studio Code
-.vscode/
-*.code-workspace
-
-# PyCharm
+# IDE
 .idea/
-*.iml
-
-# Sublime Text
-*.sublime-project
-*.sublime-workspace
-
-# Vim
+.vscode/
 *.swp
 *.swo
 *~
 
-# Emacs
-*~
-\#*\#
-.\#*
+# Logs
+*.log
+logs/
 
-# ========================
-# Operating System
-# ========================
+# AWS
+.aws-sam/
 
-# macOS
-.DS_Store
-.AppleDouble
-.LSOverride
-._*
-
-# Windows
-Thumbs.db
-Thumbs.db:encryptable
-ehthumbs.db
-ehthumbs_vista.db
-*.stackdump
-[Dd]esktop.ini
-
-# Linux
-*~
-
-# ========================
-# Testing / Coverage
-# ========================
-
+# Testing
 .pytest_cache/
 .coverage
 htmlcov/
 .tox/
-.hypothesis/
 
-# ========================
-# Documentation
-# ========================
+# Environment
+.env
+.env.local
 
-docs/_build/
-*.log
+# OS
+Thumbs.db
+.DS_Store
 
-# ========================
-# Temporary Files
-# ========================
-
+# Temporary
 *.tmp
 *.temp
-*.bak
-*.swp
-*.swo
-*.log
-
-# ========================
-# Project Specific
-# ========================
-
-# Local testing videos/files
-test_videos/
-sample_demos/
-*.mp4
-*.mov
-*.avi
-
-# Local configuration
-config.local.json
-secrets.json
-
-# Deployment artifacts
-*.zip
-
-# Database dumps
-*.db
-*.sqlite
-*.sqlite3
+/tmp/

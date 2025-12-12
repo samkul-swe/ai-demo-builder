@@ -11,7 +11,7 @@ from botocore.exceptions import ClientError
 
 # Initialize DynamoDB
 dynamodb = boto3.resource('dynamodb')
-TABLE_NAME = os.environ.get('DYNAMODB_TABLE', 'ai-demo-sessions')  # ✅ Fixed
+table_name = os.environ.get('SESSIONS_TABLE')
 
 
 def lambda_handler(event, context):
@@ -23,7 +23,7 @@ def lambda_handler(event, context):
     """
     try:
         print("[Service6] Starting Session Creator")
-        print(f"[Service6] Table: {TABLE_NAME}")
+        print(f"[Service6] Table: {table_name}")
         print(f"[Service6] Event keys: {list(event.keys())}")
 
         # Extract data from Service 5
@@ -102,8 +102,8 @@ def lambda_handler(event, context):
         }
         
         # Store in DynamoDB
-        print(f"[Service6] Writing to DynamoDB table: {TABLE_NAME}")
-        table = dynamodb.Table(TABLE_NAME)
+        print(f"[Service6] Writing to DynamoDB table: {table_name}")
+        table = dynamodb.Table(table_name)
         
         response = table.put_item(Item=session_item)
         
@@ -117,7 +117,7 @@ def lambda_handler(event, context):
                 'project_name': project_name,
                 'owner': owner,
                 'status': 'stored',
-                'table': TABLE_NAME,
+                'table': table_name,
                 'created_at': created_at,
                 'suggestions_count': len(videos)
             }
@@ -130,7 +130,7 @@ def lambda_handler(event, context):
         
         # Common DynamoDB errors
         if error_code == 'ResourceNotFoundException':
-            print(f"[Service6] Table '{TABLE_NAME}' does not exist!")
+            print(f"[Service6] Table '{table_name}' does not exist!")
         elif error_code == 'ValidationException':
             print(f"[Service6] Invalid data format for DynamoDB")
         elif error_code == 'ProvisionedThroughputExceededException':

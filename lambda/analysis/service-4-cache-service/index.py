@@ -27,7 +27,7 @@ def get_dynamodb_table():
         raise ImportError("boto3 is required for DynamoDB operations")
     
     dynamodb = boto3.resource('dynamodb')
-    table_name = os.environ.get('DYNAMODB_TABLE', 'ai-demo-cache')
+    table_name = os.environ.get('CACHE_TABLE')
     
     print(f"[Service4] Connecting to DynamoDB table: {table_name}")
     return dynamodb.Table(table_name)
@@ -75,7 +75,7 @@ def get_cache_item(key: str) -> Optional[Dict[str, Any]]:
     except ClientError as e:
         error_code = e.response.get('Error', {}).get('Code', '')
         if error_code == 'ResourceNotFoundException':
-            raise Exception(f"DynamoDB table not found: {os.environ.get('DYNAMODB_TABLE', 'ai-demo-cache')}")
+            raise Exception(f"DynamoDB table not found: {os.environ.get('CACHE_TABLE')}")
         print(f"[Service4] ⚠️  DynamoDB error (non-critical): {str(e)}")
         return None  # Return None on error so Service 1 can continue
 
@@ -115,7 +115,7 @@ def set_cache_item(key: str, value: Any, ttl: Optional[int] = None) -> bool:
     except ClientError as e:
         error_code = e.response.get('Error', {}).get('Code', '')
         if error_code == 'ResourceNotFoundException':
-            raise Exception(f"DynamoDB table not found: {os.environ.get('DYNAMODB_TABLE', 'ai-demo-cache')}")
+            raise Exception(f"DynamoDB table not found: {os.environ.get('CACHE_TABLE')}")
         print(f"[Service4] ⚠️  Failed to cache (non-critical): {str(e)}")
         return False  # Don't fail Service 1 if cache write fails
 
@@ -143,7 +143,7 @@ def delete_cache_item(key: str) -> bool:
     except ClientError as e:
         error_code = e.response.get('Error', {}).get('Code', '')
         if error_code == 'ResourceNotFoundException':
-            raise Exception(f"DynamoDB table not found: {os.environ.get('DYNAMODB_TABLE', 'ai-demo-cache')}")
+            raise Exception(f"DynamoDB table not found: {os.environ.get('CACHE_TABLE')}")
         print(f"[Service4] ⚠️  Failed to delete (non-critical): {str(e)}")
         return False
 

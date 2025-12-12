@@ -20,7 +20,7 @@ dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
 lambda_client = boto3.client('lambda', region_name='us-east-1')
 
 # Environment variables
-TABLE_NAME = os.environ.get('DYNAMODB_TABLE', 'ai-demo-sessions')
+TABLE_NAME = os.environ.get('SESSIONS_TABLE')
 BUCKET = os.environ.get('S3_BUCKET', 'ai-demo-builder')
 VALIDATOR_FUNCTION = os.environ.get('VALIDATOR_FUNCTION_NAME', 'service-9-video-validator')
 

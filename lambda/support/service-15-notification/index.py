@@ -23,7 +23,7 @@ dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
 lambda_client = boto3.client('lambda', region_name='us-east-1')
 
 # Configuration
-TABLE_NAME = os.environ.get('DYNAMODB_TABLE', 'ai-demo-sessions')
+TABLE_NAME = os.environ.get('SESSIONS_TABLE')
 SNS_TOPIC_ARN = os.environ.get('SNS_TOPIC_ARN', '')
 HTTP_WEBHOOK_URL = os.environ.get('HTTP_WEBHOOK_URL', '')
 ENABLE_EMAIL = os.environ.get('ENABLE_EMAIL_NOTIFICATIONS', 'false').lower() == 'true'

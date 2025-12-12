@@ -26,7 +26,7 @@ lambda_client = boto3.client('lambda', region_name='us-east-1')
 
 # Environment variables
 BUCKET_NAME = os.environ.get('S3_BUCKET', 'ai-demo-builder')
-TABLE_NAME = os.environ.get('DYNAMODB_TABLE', 'ai-demo-sessions')
+TABLE_NAME = os.environ.get('SESSIONS_TABLE')
 STITCHER_FUNCTION = os.environ.get('STITCHER_FUNCTION_NAME', 'service-13-video-stitcher')
 
 # Slide dimensions

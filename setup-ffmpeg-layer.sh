@@ -73,6 +73,6 @@ echo ""
 echo "✅ Ready for CDK deployment!"
 echo ""
 echo "Next steps:"
-echo "  1. Run: cdk bootstrap aws://288418345946/us-west-1"
+echo "  1. Run: cdk bootstrap aws://288418345946/us-east-1"
 echo "  2. Run: cdk deploy"
 

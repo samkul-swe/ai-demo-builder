@@ -24,7 +24,7 @@ lambda_client = boto3.client('lambda', region_name='us-east-1')
 
 # Environment variables
 BUCKET = os.environ.get('S3_BUCKET', 'ai-demo-builder')
-TABLE_NAME = os.environ.get('DYNAMODB_TABLE', 'ai-demo-sessions')
+TABLE_NAME = os.environ.get('SESSIONS_TABLE')
 CONVERTER_FUNCTION = os.environ.get('CONVERTER_FUNCTION_NAME', 'service-10-format-converter')
 MAX_DURATION = int(os.environ.get('MAX_VIDEO_DURATION', '120'))  # 2 minutes default
 MIN_DURATION = int(os.environ.get('MIN_VIDEO_DURATION', '5'))    # 5 seconds

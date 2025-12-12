@@ -23,7 +23,7 @@ dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
 s3_client = boto3.client('s3', region_name='us-east-1')
 
 # Configuration
-TABLE_NAME = os.environ.get('DYNAMODB_TABLE', 'ai-demo-sessions')
+TABLE_NAME = os.environ.get('SESSIONS_TABLE')
 BUCKET = os.environ.get('S3_BUCKET', 'ai-demo-builder')
 DAYS_TO_KEEP = int(os.environ.get('DAYS_TO_KEEP', '30'))
 FAILED_SESSION_DAYS = int(os.environ.get('FAILED_SESSION_DAYS', '7'))

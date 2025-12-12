@@ -25,7 +25,7 @@ sqs = boto3.client('sqs', region_name='us-east-1')
 
 # Environment variables
 BUCKET = os.environ.get('S3_BUCKET', 'ai-demo-builder')
-TABLE_NAME = os.environ.get('DYNAMODB_TABLE', 'ai-demo-sessions')
+TABLE_NAME = os.environ.get('SESSIONS_TABLE')
 QUEUE_URL = os.environ.get('SQS_QUEUE_URL', '')
 
 # Standard output format for all videos
