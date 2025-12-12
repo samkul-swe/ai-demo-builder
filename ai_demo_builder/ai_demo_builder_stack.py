@@ -21,6 +21,7 @@ from aws_cdk import (
     aws_s3_notifications as s3n,
     aws_events as events,
     aws_events_targets as targets,
+    aws_lambda_event_sources as lambda_event_sources,
 )
 from constructs import Construct
 import sys
@@ -360,6 +361,15 @@ class AiDemoBuilderStack(Stack):
             memory=LAMBDA_CONFIG["memory_large"],
             env_config=get_service_lambda_env("slide_creator"),
             ephemeral_storage=LAMBDA_CONFIG["ephemeral_storage"]
+        )
+
+        slide_creator.add_event_source(
+            lambda_event_sources.SqsEventSource(
+                processing_queue,
+                batch_size=1,  # Process one message at a time
+                max_batching_window=Duration.seconds(0),
+                report_batch_item_failures=True
+            )
         )
 
         # Video Stitcher - with optional FFmpeg layer
