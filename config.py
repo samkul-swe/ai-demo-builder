@@ -16,7 +16,7 @@ DEPLOYMENT_ENVIRONMENT = os.getenv("DEPLOYMENT_ENV", "prod")  # prod, dev, stagi
 # ========================
 # AWS CONFIGURATION
 # ========================
-AWS_REGION = "us-west-2"
+AWS_REGION = "us-east-1"
 AWS_ACCOUNT_ID = os.getenv("AWS_ACCOUNT_ID", "")  # Optional: set for multi-account
 
 # ========================

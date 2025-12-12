@@ -18,9 +18,9 @@ logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 # Initialize AWS clients
-s3_client = boto3.client('s3', region_name='us-west-2')
-dynamodb = boto3.resource('dynamodb', region_name='us-west-2')
-lambda_client = boto3.client('lambda', region_name='us-west-2')  # ✅ FIXED: Added this line
+s3_client = boto3.client('s3', region_name='us-east-1')
+dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
+lambda_client = boto3.client('lambda', region_name='us-east-1')  # ✅ FIXED: Added this line
 
 # Configuration - FIXED to match other services
 BUCKET = os.environ.get('S3_BUCKET', 'ai-demo-builder')
@@ -29,6 +29,24 @@ TABLE_NAME = os.environ.get('DYNAMODB_TABLE', 'ai-demo-sessions')
 # FFmpeg paths - FIXED
 FFMPEG_PATH = os.environ.get('FFMPEG_PATH', '/opt/python/bin/ffmpeg')
 FFPROBE_PATH = os.environ.get('FFPROBE_PATH', '/opt/python/bin/ffprobe')
+
+# Check FFmpeg paths exist
+if not os.path.exists(FFMPEG_PATH):
+    fallback_paths = ['/opt/bin/ffmpeg', '/usr/bin/ffmpeg', 'ffmpeg']
+    for path in fallback_paths:
+        if os.path.exists(path):
+            FFMPEG_PATH = path
+            break
+
+if not os.path.exists(FFPROBE_PATH):
+    fallback_paths = ['/opt/bin/ffprobe', '/usr/bin/ffprobe', 'ffprobe']
+    for path in fallback_paths:
+        if os.path.exists(path):
+            FFPROBE_PATH = path
+            break
+
+logger.info(f"[Service14] Using ffmpeg: {FFMPEG_PATH}")
+logger.info(f"[Service14] Using ffprobe: {FFPROBE_PATH}")
 
 # Output presets for different resolutions
 PRESETS = {
@@ -165,7 +183,7 @@ def upload_to_s3(local_path, s3_key, content_type='video/mp4'):
         s3_key,
         ExtraArgs={'ContentType': content_type}
     )
-    return f"https://{BUCKET}.s3.us-west-2.amazonaws.com/{s3_key}"
+    return f"https://{BUCKET}.s3.us-east-1.amazonaws.com/{s3_key}"
 
 
 def generate_presigned_url(s3_key, expires_in=86400):
@@ -250,6 +268,32 @@ def trigger_notification_service(session_id):
         )
         
         logger.info(f"[Service14] Triggering notification service: {notification_function}")
+        
+        lambda_client.invoke(
+            FunctionName=notification_function,
+            InvocationType='Event',  # Asynchronous
+            Payload=json.dumps(payload)
+        )
+        
+        logger.info(f"[Service14] ✅ Triggered Service 15 (Notification)")
+        
+    except Exception as e:
+        logger.error(f"[Service14] ⚠️ Failed to trigger notifications (non-critical): {e}")
+
+
+def trigger_notification_service(session_id):
+    """Trigger Service 15 (Notification Service) asynchronously"""
+    try:
+        payload = {
+            'session_id': session_id
+        }
+        
+        notification_function = os.environ.get(
+            'NOTIFICATION_FUNCTION_NAME',
+            'service-15-notification'
+        )
+        
+        logger.info(f"[Service14] Triggering notification: {notification_function}")
         
         lambda_client.invoke(
             FunctionName=notification_function,

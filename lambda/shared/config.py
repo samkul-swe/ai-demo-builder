@@ -9,7 +9,7 @@ from typing import Dict, Any, Optional
 # ========================
 # AWS RESOURCES (from environment)
 # ========================
-AWS_REGION = os.environ.get('REGION', 'us-west-2')
+AWS_REGION = os.environ.get('REGION', 'us-east-1')
 S3_BUCKET = os.environ.get('S3_BUCKET', 'ai-demo-builder')
 DYNAMODB_TABLE = os.environ.get('DYNAMODB_TABLE', 'ai-demo-sessions')
 CACHE_TABLE = os.environ.get('CACHE_TABLE', 'ai-demo-cache')

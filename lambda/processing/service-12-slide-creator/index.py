@@ -20,9 +20,9 @@ logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 # Initialize AWS clients
-s3_client = boto3.client('s3', region_name='us-west-2')
-dynamodb = boto3.resource('dynamodb', region_name='us-west-2')
-lambda_client = boto3.client('lambda', region_name='us-west-2')
+s3_client = boto3.client('s3', region_name='us-east-1')
+dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
+lambda_client = boto3.client('lambda', region_name='us-east-1')
 
 # Environment variables
 BUCKET_NAME = os.environ.get('S3_BUCKET', 'ai-demo-builder')

@@ -1,7 +1,6 @@
 """
 AI Demo Builder - Complete AWS CDK Stack
-Uses centralized configuration from config.py
-All 17 services properly configured
+FIXED VERSION with correct imports and paths
 """
 
 from aws_cdk import (
@@ -20,25 +19,58 @@ from aws_cdk import (
     aws_s3_notifications as s3n,
     aws_events as events,
     aws_events_targets as targets,
+    aws_lambda_event_sources as lambda_sources,
 )
 from constructs import Construct
-import sys
 import os
 
-# Import centralized configuration
-sys.path.append(os.path.dirname(os.path.dirname(__file__)))
-from config import (
-    S3_BUCKET_NAME,
-    DYNAMODB_SESSIONS_TABLE,
-    DYNAMODB_CACHE_TABLE,
-    SQS_PROCESSING_QUEUE,
-    SNS_NOTIFICATION_TOPIC,
-    LAMBDA_EXECUTION_ROLE,
-    LAMBDA_FUNCTIONS,
-    LAMBDA_CONFIG,
-    VIDEO_SETTINGS,
-    get_service_lambda_env,
-)
+# ========================
+# INLINE CONFIGURATION (Instead of importing)
+# ========================
+# This avoids import path issues
+
+S3_BUCKET_NAME = "ai-demo-builder"
+DYNAMODB_SESSIONS_TABLE = "ai-demo-sessions"
+DYNAMODB_CACHE_TABLE = "ai-demo-cache"
+SQS_PROCESSING_QUEUE = "video-processing-queue"
+SNS_NOTIFICATION_TOPIC = "demo-notifications"
+LAMBDA_EXECUTION_ROLE = "lambda-execution-role"
+
+# Lambda function names
+LAMBDA_FUNCTIONS = {
+    "github_fetcher": "service-1-github-fetcher",
+    "readme_parser": "service-2-readme-parser",
+    "project_analyzer": "service-3-project-analyzer",
+    "cache_service": "service-4-cache-service",
+    "ai_suggestion": "service-5-ai-suggestion",
+    "session_creator": "service-6-session-creator",
+    "upload_url_generator": "service-7-upload-url-generator",
+    "upload_tracker": "service-8-upload-tracker",
+    "video_validator": "service-9-video-validator",
+    "format_converter": "service-10-format-converter",
+    "job_queue": "service-11-job-queue",
+    "slide_creator": "service-12-slide-creator",
+    "video_stitcher": "service-13-video-stitcher",
+    "video_optimizer": "service-14-video-optimizer",
+    "notification_service": "service-15-notification",
+    "status_tracker": "service-16-status-tracker",
+    "cleanup_service": "service-17-cleanup"
+}
+
+# Lambda configuration
+LAMBDA_CONFIG = {
+    "timeout_short": 10,
+    "timeout_medium": 30,
+    "timeout_long": 300,
+    "timeout_extra_long": 900,
+    "memory_small": 128,
+    "memory_medium": 256,
+    "memory_large": 512,
+    "memory_xlarge": 1024,
+    "memory_xxlarge": 3008,
+    "ephemeral_storage": 512,
+    "ephemeral_storage_large": 10240,
+}
 
 
 class AiDemoBuilderStack(Stack):
@@ -49,10 +81,9 @@ class AiDemoBuilderStack(Stack):
         # STORAGE LAYER
         # ========================
         
-        # S3 Bucket for video storage
         self.demo_bucket = s3.Bucket(
             self, "AiDemoBuilderBucket",
-            bucket_name=S3_BUCKET_NAME,  # From config.py
+            bucket_name=S3_BUCKET_NAME,
             cors=[s3.CorsRule(
                 allowed_methods=[
                     s3.HttpMethods.GET,
@@ -73,10 +104,10 @@ class AiDemoBuilderStack(Stack):
             auto_delete_objects=True
         )
 
-        # DynamoDB Table for demo sessions
+        # DynamoDB Tables
         self.sessions_table = dynamodb.Table(
             self, "AiDemoSessions",
-            table_name=DYNAMODB_SESSIONS_TABLE,  # From config.py
+            table_name=DYNAMODB_SESSIONS_TABLE,
             partition_key=dynamodb.Attribute(
                 name="id",
                 type=dynamodb.AttributeType.STRING
@@ -86,10 +117,9 @@ class AiDemoBuilderStack(Stack):
             removal_policy=RemovalPolicy.DESTROY
         )
 
-        # DynamoDB Table for caching
         self.cache_table = dynamodb.Table(
             self, "AiDemoCache",
-            table_name=DYNAMODB_CACHE_TABLE,  # From config.py
+            table_name=DYNAMODB_CACHE_TABLE,
             partition_key=dynamodb.Attribute(
                 name="cacheKey",
                 type=dynamodb.AttributeType.STRING
@@ -103,18 +133,16 @@ class AiDemoBuilderStack(Stack):
         # MESSAGING & QUEUING
         # ========================
         
-        # SQS Queue for video processing jobs
         processing_queue = sqs.Queue(
             self, "VideoProcessingQueue",
-            queue_name=SQS_PROCESSING_QUEUE,  # From config.py
-            visibility_timeout=Duration.seconds(LAMBDA_CONFIG["timeout_extra_long"]),  # From config.py
+            queue_name=SQS_PROCESSING_QUEUE,
+            visibility_timeout=Duration.seconds(LAMBDA_CONFIG["timeout_extra_long"]),
             retention_period=Duration.days(4)
         )
 
-        # SNS Topic for notifications
         notification_topic = sns.Topic(
             self, "DemoNotifications",
-            topic_name=SNS_NOTIFICATION_TOPIC,  # From config.py
+            topic_name=SNS_NOTIFICATION_TOPIC,
             display_name="AI Demo Builder Notifications"
         )
 
@@ -122,12 +150,28 @@ class AiDemoBuilderStack(Stack):
         # LAMBDA LAYER (FFmpeg)
         # ========================
         
-        ffmpeg_layer = lambda_.LayerVersion(
-            self, "FFmpegLayer",
-            code=lambda_.Code.from_asset("layers/ffmpeg"),
-            compatible_runtimes=[lambda_.Runtime.PYTHON_3_11],
-            description="FFmpeg and FFprobe binaries for video processing"
+        # Check if FFmpeg layer directory exists
+        layer_path = os.path.join(
+            os.path.dirname(__file__),
+            "..",
+            "..",
+            "layers",
+            "ffmpeg"
         )
+        
+        ffmpeg_layer = None
+        if os.path.exists(layer_path):
+            ffmpeg_layer = lambda_.LayerVersion(
+                self, "FFmpegLayer",
+                code=lambda_.Code.from_asset("../layers/ffmpeg"),
+                compatible_runtimes=[lambda_.Runtime.PYTHON_3_11],
+                description="FFmpeg and FFprobe binaries for video processing"
+            )
+            print("✅ FFmpeg layer will be created")
+        else:
+            print("⚠️  WARNING: FFmpeg layer directory not found at layers/ffmpeg")
+            print("   Services 9, 10, 13, 14 will fail without FFmpeg!")
+            print("   Run: ./setup-ffmpeg-layer.sh")
 
         # ========================
         # IAM ROLE FOR LAMBDA FUNCTIONS
@@ -135,7 +179,7 @@ class AiDemoBuilderStack(Stack):
         
         lambda_role = iam.Role(
             self, "LambdaExecutionRole",
-            role_name=LAMBDA_EXECUTION_ROLE,  # From config.py
+            role_name=LAMBDA_EXECUTION_ROLE,
             assumed_by=iam.ServicePrincipal("lambda.amazonaws.com"),
             managed_policies=[
                 iam.ManagedPolicy.from_aws_managed_policy_name(
@@ -144,7 +188,7 @@ class AiDemoBuilderStack(Stack):
             ]
         )
 
-        # Grant permissions to Lambda role
+        # Grant permissions
         self.demo_bucket.grant_read_write(lambda_role)
         self.demo_bucket.grant_delete(lambda_role)
         self.sessions_table.grant_read_write_data(lambda_role)
@@ -162,122 +206,206 @@ class AiDemoBuilderStack(Stack):
         )
 
         # ========================
-        # PERSON 1: ANALYSIS PIPELINE (Services 1-4)
+        # HELPER: Create Lambda Function
         # ========================
         
-        # Service 2: README Parser
-        readme_parser = lambda_.Function(
-            self, "ReadmeParser",
-            function_name=LAMBDA_FUNCTIONS["readme_parser"],  # From config.py
-            runtime=lambda_.Runtime.PYTHON_3_11,
-            handler="index.lambda_handler",
-            code=lambda_.Code.from_asset("lambda/analysis/service-2-readme-parser"),
-            role=lambda_role,
-            timeout=Duration.seconds(LAMBDA_CONFIG["timeout_medium"]),  # From config.py
-            memory_size=LAMBDA_CONFIG["memory_medium"],  # From config.py
-            environment=get_service_lambda_env("readme_parser")  # From config.py
+        def create_lambda(name, path, timeout, memory, needs_ffmpeg=False, ephemeral_mb=512):
+            """Helper to create Lambda function with consistent config"""
+            
+            layers = []
+            if needs_ffmpeg and ffmpeg_layer:
+                layers.append(ffmpeg_layer)
+            
+            env_vars = {
+                "S3_BUCKET": self.demo_bucket.bucket_name,
+                "DYNAMODB_TABLE": self.sessions_table.table_name,
+                "CACHE_TABLE": self.cache_table.table_name,
+                "SQS_QUEUE_URL": processing_queue.queue_url,
+                "SNS_TOPIC_ARN": notification_topic.topic_arn,
+            }
+            
+            # Add service-specific env vars
+            service_env = self._get_service_env(name)
+            env_vars.update(service_env)
+            
+            return lambda_.Function(
+                self, name.replace("-", "").title(),
+                function_name=name,
+                runtime=lambda_.Runtime.PYTHON_3_11,
+                handler="index.lambda_handler",
+                code=lambda_.Code.from_asset(path),
+                role=lambda_role,
+                timeout=Duration.seconds(timeout),
+                memory_size=memory,
+                layers=layers if layers else None,
+                ephemeral_storage_size=Size.mebibytes(ephemeral_mb) if ephemeral_mb > 512 else None,
+                environment=env_vars
+            )
+        
+        # ========================
+        # CREATE ALL 17 SERVICES
+        # ========================
+        
+        # ========================
+        # DETERMINE CORRECT PATH PREFIX
+        # ========================
+        
+        # CDK stack is in ai_demo_builder/ directory
+        # Lambda code is in lambda/ directory (sibling to ai_demo_builder/)
+        # So we need to go up one level: ../lambda/
+        
+        lambda_base_path = os.path.join(
+            os.path.dirname(__file__),  # ai_demo_builder/
+            "..",                        # go up to project root
+            "lambda"                     # then into lambda/
         )
-
-        # Service 3: Project Analyzer
-        project_analyzer = lambda_.Function(
-            self, "ProjectAnalyzer",
-            function_name=LAMBDA_FUNCTIONS["project_analyzer"],  # From config.py
-            runtime=lambda_.Runtime.PYTHON_3_11,
-            handler="index.lambda_handler",
-            code=lambda_.Code.from_asset("lambda/analysis/service-3-project-analyzer"),
-            role=lambda_role,
-            timeout=Duration.seconds(LAMBDA_CONFIG["timeout_medium"]),
-            memory_size=LAMBDA_CONFIG["memory_medium"],
-            environment=get_service_lambda_env("project_analyzer")
+        
+        # Verify the path exists
+        if not os.path.exists(lambda_base_path):
+            raise Exception(f"Lambda directory not found at: {lambda_base_path}")
+        
+        print(f"✅ Lambda base path: {lambda_base_path}")
+        
+        # ========================
+        # SERVICE 1-4: ANALYSIS PIPELINE
+        # ========================
+        
+        readme_parser = create_lambda(
+            LAMBDA_FUNCTIONS["readme_parser"],
+            os.path.join(lambda_base_path, "analysis/service-2-readme-parser"),
+            LAMBDA_CONFIG["timeout_medium"],
+            LAMBDA_CONFIG["memory_medium"]
         )
-
-        # Service 4: Cache Service
-        cache_service = lambda_.Function(
-            self, "CacheService",
-            function_name=LAMBDA_FUNCTIONS["cache_service"],  # From config.py
-            runtime=lambda_.Runtime.PYTHON_3_11,
-            handler="index.lambda_handler",
-            code=lambda_.Code.from_asset("lambda/analysis/service-4-cache-service"),
-            role=lambda_role,
-            timeout=Duration.seconds(LAMBDA_CONFIG["timeout_short"]),
-            memory_size=LAMBDA_CONFIG["memory_small"],
-            environment=get_service_lambda_env("cache_service")
+        
+        project_analyzer = create_lambda(
+            LAMBDA_FUNCTIONS["project_analyzer"],
+            os.path.join(lambda_base_path, "analysis/service-3-project-analyzer"),
+            LAMBDA_CONFIG["timeout_medium"],
+            LAMBDA_CONFIG["memory_medium"]
         )
-
-        # Service 1: GitHub Fetcher
-        github_fetcher = lambda_.Function(
-            self, "GitHubFetcher",
-            function_name=LAMBDA_FUNCTIONS["github_fetcher"],  # From config.py
-            runtime=lambda_.Runtime.PYTHON_3_11,
-            handler="index.lambda_handler",
-            code=lambda_.Code.from_asset("lambda/analysis/service-1-github-fetcher"),
-            role=lambda_role,
-            timeout=Duration.seconds(LAMBDA_CONFIG["timeout_medium"]),
-            memory_size=LAMBDA_CONFIG["memory_large"],
-            environment=get_service_lambda_env("github_fetcher")
+        
+        cache_service = create_lambda(
+            LAMBDA_FUNCTIONS["cache_service"],
+            os.path.join(lambda_base_path, "analysis/service-4-cache-service"),
+            LAMBDA_CONFIG["timeout_short"],
+            LAMBDA_CONFIG["memory_small"]
+        )
+        
+        github_fetcher = create_lambda(
+            LAMBDA_FUNCTIONS["github_fetcher"],
+            os.path.join(lambda_base_path, "analysis/service-1-github-fetcher"),
+            LAMBDA_CONFIG["timeout_long"],
+            LAMBDA_CONFIG["memory_large"]
+        )
+        
+        # Service 5-6: AI & Session
+        ai_suggestion_service = create_lambda(
+            LAMBDA_FUNCTIONS["ai_suggestion"],
+            os.path.join(lambda_base_path, "ai/service-5-ai-suggestion"),
+            LAMBDA_CONFIG["timeout_long"],
+            LAMBDA_CONFIG["memory_large"]
+        )
+        
+        session_creator = create_lambda(
+            LAMBDA_FUNCTIONS["session_creator"],
+            os.path.join(lambda_base_path, "ai/service-6-session-creator"),
+            LAMBDA_CONFIG["timeout_short"],
+            LAMBDA_CONFIG["memory_small"]
+        )
+        
+        # Service 7-10: Upload Pipeline
+        upload_url_generator = create_lambda(
+            LAMBDA_FUNCTIONS["upload_url_generator"],
+            os.path.join(lambda_base_path, "upload/service-7-upload-url-generator"),
+            LAMBDA_CONFIG["timeout_short"],
+            LAMBDA_CONFIG["memory_medium"]
+        )
+        
+        upload_tracker = create_lambda(
+            LAMBDA_FUNCTIONS["upload_tracker"],
+            os.path.join(lambda_base_path, "upload/service-8-upload-tracker"),
+            LAMBDA_CONFIG["timeout_short"],
+            LAMBDA_CONFIG["memory_medium"]
+        )
+        
+        video_validator = create_lambda(
+            LAMBDA_FUNCTIONS["video_validator"],
+            os.path.join(lambda_base_path, "upload/service-9-video-validator"),
+            LAMBDA_CONFIG["timeout_long"],
+            LAMBDA_CONFIG["memory_xlarge"],
+            needs_ffmpeg=True
+        )
+        
+        format_converter = create_lambda(
+            LAMBDA_FUNCTIONS["format_converter"],
+            os.path.join(lambda_base_path, "upload/service-10-format-converter"),
+            LAMBDA_CONFIG["timeout_extra_long"],
+            LAMBDA_CONFIG["memory_xxlarge"],
+            needs_ffmpeg=True,
+            ephemeral_mb=2048
+        )
+        
+        # Service 11-14: Processing Pipeline
+        job_queue_service = create_lambda(
+            LAMBDA_FUNCTIONS["job_queue"],
+            os.path.join(lambda_base_path, "processing/service-11-job-queue"),
+            LAMBDA_CONFIG["timeout_medium"],
+            LAMBDA_CONFIG["memory_medium"]
+        )
+        
+        slide_creator = create_lambda(
+            LAMBDA_FUNCTIONS["slide_creator"],
+            os.path.join(lambda_base_path, "processing/service-12-slide-creator"),
+            120,
+            LAMBDA_CONFIG["memory_xlarge"],
+            ephemeral_mb=LAMBDA_CONFIG["ephemeral_storage"]
+        )
+        
+        video_stitcher = create_lambda(
+            LAMBDA_FUNCTIONS["video_stitcher"],
+            os.path.join(lambda_base_path, "processing/service-13-video-stitcher"),
+            LAMBDA_CONFIG["timeout_extra_long"],
+            LAMBDA_CONFIG["memory_xxlarge"],
+            needs_ffmpeg=True,
+            ephemeral_mb=LAMBDA_CONFIG["ephemeral_storage_large"]
+        )
+        
+        video_optimizer = create_lambda(
+            LAMBDA_FUNCTIONS["video_optimizer"],
+            os.path.join(lambda_base_path, "processing/service-14-video-optimizer"),
+            LAMBDA_CONFIG["timeout_extra_long"],
+            LAMBDA_CONFIG["memory_xxlarge"],
+            needs_ffmpeg=True,
+            ephemeral_mb=LAMBDA_CONFIG["ephemeral_storage_large"]
+        )
+        
+        # Service 15-17: Support Services
+        notification_service = create_lambda(
+            LAMBDA_FUNCTIONS["notification_service"],
+            os.path.join(lambda_base_path, "support/service-15-notification"),
+            LAMBDA_CONFIG["timeout_medium"],
+            LAMBDA_CONFIG["memory_medium"]
+        )
+        
+        status_tracker = create_lambda(
+            LAMBDA_FUNCTIONS["status_tracker"],
+            os.path.join(lambda_base_path, "support/service-16-status-tracker"),
+            LAMBDA_CONFIG["timeout_short"],
+            LAMBDA_CONFIG["memory_medium"]
+        )
+        
+        cleanup_service = create_lambda(
+            LAMBDA_FUNCTIONS["cleanup_service"],
+            os.path.join(lambda_base_path, "support/service-17-cleanup"),
+            LAMBDA_CONFIG["timeout_long"],
+            LAMBDA_CONFIG["memory_large"]
         )
 
         # ========================
-        # PERSON 2: AI & SESSION MANAGEMENT (Services 5-6)
+        # EVENT SOURCES & TRIGGERS
         # ========================
         
-        # Service 6: Session Creator
-        session_creator = lambda_.Function(
-            self, "SessionCreator",
-            function_name=LAMBDA_FUNCTIONS["session_creator"],  # From config.py
-            runtime=lambda_.Runtime.PYTHON_3_11,
-            handler="index.lambda_handler",
-            code=lambda_.Code.from_asset("lambda/ai/service-6-session-creator"),
-            role=lambda_role,
-            timeout=Duration.seconds(LAMBDA_CONFIG["timeout_medium"]),
-            memory_size=LAMBDA_CONFIG["memory_medium"],
-            environment=get_service_lambda_env("session_creator")
-        )
-        
-        # Service 5: AI Suggestion Service
-        ai_suggestion_service = lambda_.Function(
-            self, "AiSuggestionService",
-            function_name=LAMBDA_FUNCTIONS["ai_suggestion"],  # From config.py
-            runtime=lambda_.Runtime.PYTHON_3_11,
-            handler="index.lambda_handler",
-            code=lambda_.Code.from_asset("lambda/ai/service-5-ai-suggestion"),
-            role=lambda_role,
-            timeout=Duration.seconds(90),
-            memory_size=LAMBDA_CONFIG["memory_large"],
-            environment=get_service_lambda_env("ai_suggestion")
-        )
-
-        # ========================
-        # PERSON 3: UPLOAD PIPELINE (Services 7-10)
-        # ========================
-        
-        # Service 7: Upload URL Generator
-        upload_url_generator = lambda_.Function(
-            self, "UploadUrlGenerator",
-            function_name=LAMBDA_FUNCTIONS["upload_url_generator"],  # From config.py
-            runtime=lambda_.Runtime.PYTHON_3_11,
-            handler="index.lambda_handler",
-            code=lambda_.Code.from_asset("lambda/upload/service-7-upload-url-generator"),
-            role=lambda_role,
-            timeout=Duration.seconds(LAMBDA_CONFIG["timeout_short"]),
-            memory_size=LAMBDA_CONFIG["memory_medium"],
-            environment=get_service_lambda_env("upload_url_generator")
-        )
-        
-        # Service 8: Upload Tracker
-        upload_tracker = lambda_.Function(
-            self, "UploadTracker",
-            function_name=LAMBDA_FUNCTIONS["upload_tracker"],  # From config.py
-            runtime=lambda_.Runtime.PYTHON_3_11,
-            handler="index.lambda_handler",
-            code=lambda_.Code.from_asset("lambda/upload/service-8-upload-tracker"),
-            role=lambda_role,
-            timeout=Duration.seconds(LAMBDA_CONFIG["timeout_medium"]),
-            memory_size=LAMBDA_CONFIG["memory_medium"],
-            environment=get_service_lambda_env("upload_tracker")
-        )
-
-        # S3 Event Notification to trigger upload tracker
+        # S3 notification for upload tracker - FIXED prefix
         self.demo_bucket.add_event_notification(
             s3.EventType.OBJECT_CREATED,
             s3n.LambdaDestination(upload_tracker),
@@ -286,151 +414,16 @@ class AiDemoBuilderStack(Stack):
                 suffix=".mp4"
             )
         )
-
-        # Service 9: Video Validator
-        video_validator = lambda_.Function(
-            self, "VideoValidator",
-            function_name=LAMBDA_FUNCTIONS["video_validator"],  # From config.py
-            runtime=lambda_.Runtime.PYTHON_3_11,
-            handler="index.lambda_handler",
-            code=lambda_.Code.from_asset("lambda/upload/service-9-video-validator"),
-            role=lambda_role,
-            layers=[ffmpeg_layer],
-            timeout=Duration.seconds(LAMBDA_CONFIG["timeout_long"]),
-            memory_size=LAMBDA_CONFIG["memory_xlarge"],
-            ephemeral_storage_size=Size.mebibytes(LAMBDA_CONFIG["ephemeral_storage"]),
-            environment=get_service_lambda_env("video_validator")
-        )
-
-        # Service 10: Format Converter
-        format_converter = lambda_.Function(
-            self, "FormatConverter",
-            function_name=LAMBDA_FUNCTIONS["format_converter"],  # From config.py
-            runtime=lambda_.Runtime.PYTHON_3_11,
-            handler="index.lambda_handler",
-            code=lambda_.Code.from_asset("lambda/upload/service-10-format-converter"),
-            role=lambda_role,
-            layers=[ffmpeg_layer],
-            timeout=Duration.seconds(LAMBDA_CONFIG["timeout_long"]),
-            memory_size=LAMBDA_CONFIG["memory_xlarge"],
-            ephemeral_storage_size=Size.mebibytes(LAMBDA_CONFIG["ephemeral_storage"]),
-            environment={
-                **get_service_lambda_env("format_converter"),
-                "SQS_QUEUE_URL": processing_queue.queue_url  # Add after queue creation
-            }
-        )
-
-        # ========================
-        # PERSON 4: VIDEO PROCESSING (Services 11-14)
-        # ========================
         
-        # Service 11: Job Queue Service
-        job_queue_service = lambda_.Function(
-            self, "JobQueueService",
-            function_name=LAMBDA_FUNCTIONS["job_queue"],  # From config.py
-            runtime=lambda_.Runtime.PYTHON_3_11,
-            handler="index.lambda_handler",
-            code=lambda_.Code.from_asset("lambda/processing/service-11-job-queue"),
-            role=lambda_role,
-            timeout=Duration.seconds(LAMBDA_CONFIG["timeout_medium"]),
-            memory_size=LAMBDA_CONFIG["memory_medium"],
-            environment={
-                **get_service_lambda_env("job_queue"),
-                "SQS_QUEUE_URL": processing_queue.queue_url
-            }
+        # SQS trigger for slide creator
+        slide_creator.add_event_source(
+            lambda_sources.SqsEventSource(
+                processing_queue,
+                batch_size=1
+            )
         )
-
-        # Service 12: Slide Creator
-        slide_creator = lambda_.Function(
-            self, "SlideCreator",
-            function_name=LAMBDA_FUNCTIONS["slide_creator"],  # From config.py
-            runtime=lambda_.Runtime.PYTHON_3_11,
-            handler="index.lambda_handler",
-            code=lambda_.Code.from_asset("lambda/processing/service-12-slide-creator"),
-            role=lambda_role,
-            timeout=Duration.seconds(120),
-            memory_size=LAMBDA_CONFIG["memory_large"],
-            ephemeral_storage_size=Size.mebibytes(LAMBDA_CONFIG["ephemeral_storage"]),
-            environment=get_service_lambda_env("slide_creator")
-        )
-
-        # Service 13: Video Stitcher
-        video_stitcher = lambda_.Function(
-            self, "VideoStitcher",
-            function_name=LAMBDA_FUNCTIONS["video_stitcher"],  # From config.py
-            runtime=lambda_.Runtime.PYTHON_3_11,
-            handler="index.lambda_handler",
-            code=lambda_.Code.from_asset("lambda/processing/service-13-video-stitcher"),
-            role=lambda_role,
-            layers=[ffmpeg_layer],
-            timeout=Duration.seconds(LAMBDA_CONFIG["timeout_extra_long"]),
-            memory_size=LAMBDA_CONFIG["memory_xxlarge"],
-            ephemeral_storage_size=Size.mebibytes(LAMBDA_CONFIG["ephemeral_storage_large"]),
-            environment=get_service_lambda_env("video_stitcher")
-        )
-
-        # Service 14: Video Optimizer
-        video_optimizer = lambda_.Function(
-            self, "VideoOptimizer",
-            function_name=LAMBDA_FUNCTIONS["video_optimizer"],  # From config.py
-            runtime=lambda_.Runtime.PYTHON_3_11,
-            handler="index.lambda_handler",
-            code=lambda_.Code.from_asset("lambda/processing/service-14-video-optimizer"),
-            role=lambda_role,
-            layers=[ffmpeg_layer],
-            timeout=Duration.seconds(LAMBDA_CONFIG["timeout_extra_long"]),
-            memory_size=LAMBDA_CONFIG["memory_xxlarge"],
-            ephemeral_storage_size=Size.mebibytes(LAMBDA_CONFIG["ephemeral_storage_large"]),
-            environment=get_service_lambda_env("video_optimizer")
-        )
-
-        # ========================
-        # PERSON 5: SUPPORT SERVICES (Services 15-17)
-        # ========================
         
-        # Service 15: Notification Service
-        notification_service = lambda_.Function(
-            self, "NotificationService",
-            function_name=LAMBDA_FUNCTIONS["notification_service"],  # From config.py
-            runtime=lambda_.Runtime.PYTHON_3_11,
-            handler="index.lambda_handler",
-            code=lambda_.Code.from_asset("lambda/support/service-15-notification"),
-            role=lambda_role,
-            timeout=Duration.seconds(LAMBDA_CONFIG["timeout_medium"]),
-            memory_size=LAMBDA_CONFIG["memory_medium"],
-            environment={
-                **get_service_lambda_env("notification_service"),
-                "SNS_TOPIC_ARN": notification_topic.topic_arn
-            }
-        )
-
-        # Service 16: Status Tracker
-        status_tracker = lambda_.Function(
-            self, "StatusTracker",
-            function_name=LAMBDA_FUNCTIONS["status_tracker"],  # From config.py
-            runtime=lambda_.Runtime.PYTHON_3_11,
-            handler="index.lambda_handler",
-            code=lambda_.Code.from_asset("lambda/support/service-16-status-tracker"),
-            role=lambda_role,
-            timeout=Duration.seconds(LAMBDA_CONFIG["timeout_short"]),
-            memory_size=LAMBDA_CONFIG["memory_medium"],
-            environment=get_service_lambda_env("status_tracker")
-        )
-
-        # Service 17: Cleanup Service
-        cleanup_service = lambda_.Function(
-            self, "CleanupService",
-            function_name=LAMBDA_FUNCTIONS["cleanup_service"],  # From config.py
-            runtime=lambda_.Runtime.PYTHON_3_11,
-            handler="index.lambda_handler",
-            code=lambda_.Code.from_asset("lambda/support/service-17-cleanup"),
-            role=lambda_role,
-            timeout=Duration.seconds(LAMBDA_CONFIG["timeout_long"]),
-            memory_size=LAMBDA_CONFIG["memory_large"],
-            environment=get_service_lambda_env("cleanup_service")
-        )
-
-        # Schedule cleanup to run daily at 2 AM UTC
+        # CloudWatch Events for daily cleanup
         cleanup_rule = events.Rule(
             self, "DailyCleanupRule",
             schedule=events.Schedule.cron(
@@ -457,79 +450,69 @@ class AiDemoBuilderStack(Stack):
             )
         )
 
-        # POST /analyze - Analyze GitHub repository
+        # API Routes
         analyze = api.root.add_resource("analyze")
-        analyze.add_method(
-            "POST",
-            apigateway.LambdaIntegration(github_fetcher)
-        )
+        analyze.add_method("POST", apigateway.LambdaIntegration(github_fetcher))
 
-        # POST /suggestions - Generate AI suggestions
         suggestions = api.root.add_resource("suggestions")
-        suggestions.add_method(
-            "POST",
-            apigateway.LambdaIntegration(ai_suggestion_service)
-        )
+        suggestions.add_method("POST", apigateway.LambdaIntegration(ai_suggestion_service))
 
-        # POST /upload-url - Get presigned upload URL
         upload_url = api.root.add_resource("upload-url")
-        upload_url.add_method(
-            "POST",
-            apigateway.LambdaIntegration(upload_url_generator)
-        )
+        upload_url.add_method("POST", apigateway.LambdaIntegration(upload_url_generator))
 
-        # GET /status/{session_id} - Get session status
         status_resource = api.root.add_resource("status")
         status_by_id = status_resource.add_resource("{session_id}")
-        status_by_id.add_method(
-            "GET",
-            apigateway.LambdaIntegration(status_tracker)
-        )
+        status_by_id.add_method("GET", apigateway.LambdaIntegration(status_tracker))
 
-        # POST /generate/{session_id} - Trigger video generation
         generate = api.root.add_resource("generate")
         generate_by_id = generate.add_resource("{session_id}")
-        generate_by_id.add_method(
-            "POST",
-            apigateway.LambdaIntegration(job_queue_service)
-        )
+        generate_by_id.add_method("POST", apigateway.LambdaIntegration(job_queue_service))
 
         # ========================
         # OUTPUTS
         # ========================
         
-        CfnOutput(
-            self, "ApiEndpoint",
-            value=api.url,
-            description="API Gateway endpoint URL"
-        )
-
-        CfnOutput(
-            self, "S3BucketName",
-            value=self.demo_bucket.bucket_name,
-            description="S3 bucket for video storage"
-        )
-
-        CfnOutput(
-            self, "SessionsTableName",
-            value=self.sessions_table.table_name,
-            description="DynamoDB table for sessions"
-        )
-
-        CfnOutput(
-            self, "CacheTableName",
-            value=self.cache_table.table_name,
-            description="DynamoDB table for caching"
-        )
-
-        CfnOutput(
-            self, "SQSQueueUrl",
-            value=processing_queue.queue_url,
-            description="SQS queue for video processing"
-        )
-
-        CfnOutput(
-            self, "SNSTopicArn",
-            value=notification_topic.topic_arn,
-            description="SNS topic for notifications"
-        )
+        CfnOutput(self, "ApiEndpoint", value=api.url)
+        CfnOutput(self, "S3BucketName", value=self.demo_bucket.bucket_name)
+        CfnOutput(self, "SessionsTableName", value=self.sessions_table.table_name)
+        CfnOutput(self, "CacheTableName", value=self.cache_table.table_name)
+        CfnOutput(self, "SQSQueueUrl", value=processing_queue.queue_url)
+        CfnOutput(self, "SNSTopicArn", value=notification_topic.topic_arn)
+    
+    def _get_service_env(self, service_name: str) -> dict:
+        """Get service-specific environment variables"""
+        
+        service_envs = {
+            "service-5-ai-suggestion": {
+                "SERVICE4_FUNCTION_NAME": LAMBDA_FUNCTIONS["cache_service"],
+                "SERVICE6_FUNCTION_NAME": LAMBDA_FUNCTIONS["session_creator"],
+            },
+            "service-8-upload-tracker": {
+                "VALIDATOR_FUNCTION_NAME": LAMBDA_FUNCTIONS["video_validator"],
+            },
+            "service-9-video-validator": {
+                "CONVERTER_FUNCTION_NAME": LAMBDA_FUNCTIONS["format_converter"],
+                "MAX_VIDEO_DURATION": "120",
+                "MIN_VIDEO_DURATION": "5",
+                "MAX_FILE_SIZE": "104857600",
+            },
+            "service-12-slide-creator": {
+                "STITCHER_FUNCTION_NAME": LAMBDA_FUNCTIONS["video_stitcher"],
+            },
+            "service-13-video-stitcher": {
+                "OPTIMIZER_FUNCTION_NAME": LAMBDA_FUNCTIONS["video_optimizer"],
+                "FFMPEG_PATH": "/opt/python/bin/ffmpeg",
+                "FFPROBE_PATH": "/opt/python/bin/ffprobe",
+            },
+            "service-14-video-optimizer": {
+                "NOTIFICATION_FUNCTION_NAME": LAMBDA_FUNCTIONS["notification_service"],
+                "FFMPEG_PATH": "/opt/python/bin/ffmpeg",
+                "FFPROBE_PATH": "/opt/python/bin/ffprobe",
+            },
+            "service-17-cleanup": {
+                "DAYS_TO_KEEP": "30",
+                "FAILED_SESSION_DAYS": "7",
+            }
+        }
+        
+        return service_envs.get(service_name, {})

@@ -137,7 +137,7 @@ done
 ### **4. Deploy Backend**
 ```bash
 # Bootstrap CDK (first time only)
-cdk bootstrap aws://$(aws sts get-caller-identity --query Account --output text)/us-west-2
+cdk bootstrap aws://$(aws sts get-caller-identity --query Account --output text)/us-east-1
 
 # Synthesize CloudFormation template
 cdk synth
@@ -169,7 +169,7 @@ cd frontend
 npm install
 
 # Create .env file with your API endpoint
-echo "VITE_API_BASE_URL=https://YOUR-API-ID.execute-api.us-west-2.amazonaws.com/prod" > .env
+echo "VITE_API_BASE_URL=https://YOUR-API-ID.execute-api.us-east-1.amazonaws.com/prod" > .env
 
 # Run development server
 npm run dev
@@ -236,7 +236,7 @@ ai-demo-builder/
 
 ## 🌐 API Endpoints
 
-**Base URL:** `https://[API-ID].execute-api.us-west-2.amazonaws.com/prod`
+**Base URL:** `https://[API-ID].execute-api.us-east-1.amazonaws.com/prod`
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
@@ -248,15 +248,15 @@ ai-demo-builder/
 ### **Example Usage:**
 ```bash
 # 1. Get AI suggestions
-curl -X POST https://YOUR-API.execute-api.us-west-2.amazonaws.com/prod/suggestions \
+curl -X POST https://YOUR-API.execute-api.us-east-1.amazonaws.com/prod/suggestions \
   -H "Content-Type: application/json" \
   -d '{"github_url": "https://github.com/facebook/react"}'
 
 # 2. Check status
-curl https://YOUR-API.execute-api.us-west-2.amazonaws.com/prod/status/abc123
+curl https://YOUR-API.execute-api.us-east-1.amazonaws.com/prod/status/abc123
 
 # 3. Generate demo
-curl -X POST https://YOUR-API.execute-api.us-west-2.amazonaws.com/prod/generate/abc123
+curl -X POST https://YOUR-API.execute-api.us-east-1.amazonaws.com/prod/generate/abc123
 ```
 
 ---
@@ -566,8 +566,8 @@ layers/ffmpeg/python/bin/.gitkeep
 # These are ignored by .gitignore due to large size
 frontend/.env.example
 bash# API Configuration
-VITE_API_BASE_URL=https://YOUR-API-ID.execute-api.us-west-2.amazonaws.com/prod
+VITE_API_BASE_URL=https://YOUR-API-ID.execute-api.us-east-1.amazonaws.com/prod
 
 # AWS Configuration
 VITE_S3_BUCKET=ai-demo-builder
-VITE_AWS_REGION=us-west-2
+VITE_AWS_REGION=us-east-1
