@@ -13,6 +13,7 @@ import tempfile
 from botocore.exceptions import ClientError
 import logging
 from datetime import datetime
+from decimal import Decimal
 
 # Set up logging
 logger = logging.getLogger()
@@ -51,6 +52,12 @@ def parse_fps(fps_string):
     except (ValueError, ZeroDivisionError, AttributeError):
         return 0.0
 
+
+def decimal_to_float(obj):
+    """Convert Decimal objects to float for JSON serialization"""
+    if isinstance(obj, Decimal):
+        return float(obj)
+    raise TypeError
 
 def lambda_handler(event, context):
     """
@@ -212,11 +219,11 @@ def lambda_handler(event, context):
             # Validation successful
             validation_result = {
                 'valid': True,
-                'duration': round(duration, 2),
+                'duration': Decimal(str(round(duration, 2))),
                 'width': width,
                 'height': height,
                 'codec': codec,
-                'fps': round(fps, 2),
+                'fps': Decimal(str(round(fps, 2))),
                 'file_size': file_size,
                 'has_audio': audio_stream is not None,
                 'bitrate': int(format_info.get('bit_rate', 0))
@@ -252,10 +259,10 @@ def lambda_handler(event, context):
                     'Content-Type': 'application/json'
                 },
                 'body': json.dumps({
-                    'session_id': session_id,
-                    'suggestion_id': suggestion_id,
-                    'validation': validation_result
-                })
+                'session_id': session_id,
+                'suggestion_id': suggestion_id,
+                'validation': validation_result
+                }, default=decimal_to_float)
             }
             
         finally:
@@ -338,7 +345,7 @@ def trigger_format_conversion(session_id, suggestion_id, s3_key, validation_resu
         lambda_client.invoke(
             FunctionName=CONVERTER_FUNCTION,
             InvocationType='Event',  # Asynchronous - fire and forget
-            Payload=json.dumps(payload)
+            Payload=json.dumps(payload, default=decimal_to_float)
         )
         
         logger.info(f"[Service9] ✅ Triggered format conversion for {s3_key}")
